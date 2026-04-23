@@ -1,0 +1,2196 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Êxodos — Mapa Mundi</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&family=Cinzel:wght@400;600;700&family=IM+Fell+English:ital@0;1&display=swap');
+
+:root {
+  --ink:#e8dcc8; --ink2:#c8b898; --ink3:#a89878; --ink4:#887858;
+  --gold:#c8a050; --gold2:#e8c070; --golddim:#7a6030;
+  --blood:#cc1844; --violet:#7828b8; --ember:#b02020;
+  --orange:#c86020; --amber:#b88020; --jade:#507828; --pine:#287848;
+  --frost:#4090b8;
+  --bg0:#04060c; --bg1:#07090f; --bg2:#0a0c14;
+  --panel:rgba(8,10,18,0.97);
+  --border:rgba(200,160,80,0.2);
+  --border2:rgba(200,160,80,0.35);
+}
+
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{width:100%;height:100%;overflow:hidden;touch-action:none;background:var(--bg0);}
+body{font-family:'IM Fell English',serif;color:var(--ink);}
+
+/* noise overlay */
+body::before{content:'';position:fixed;inset:0;z-index:1;pointer-events:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.045'/%3E%3C/svg%3E");
+  mix-blend-mode:overlay;opacity:.8;}
+
+/* ═══ MAP ═══ */
+#mapwrap{position:fixed;inset:0;z-index:2;overflow:hidden;}
+#mapsvg{position:absolute;top:0;left:0;width:100%;height:100%;touch-action:none;will-change:transform;}
+
+/* ═══ HEADER ═══ */
+#hdr{
+  position:fixed;top:0;left:0;right:0;z-index:20;height:54px;
+  display:flex;align-items:center;justify-content:space-between;padding:0 18px;
+  background:linear-gradient(180deg,rgba(4,6,12,.98) 0%,rgba(4,6,12,.75) 100%);
+}
+#hdr::after{content:'';position:absolute;bottom:0;left:8%;right:8%;height:1px;
+  background:linear-gradient(90deg,transparent,var(--gold),transparent);opacity:.45;}
+.ht{font-family:'Cinzel Decorative',serif;font-size:17px;font-weight:700;letter-spacing:5px;
+  color:var(--gold2);text-shadow:0 0 24px rgba(200,160,80,.5);}
+.hs{font-family:'Cinzel',serif;font-size:8px;color:var(--ink4);letter-spacing:4px;margin-top:2px;}
+.hbtn{background:rgba(200,160,80,.08);border:1px solid var(--border2);color:var(--gold);
+  font-family:'Cinzel',serif;font-size:9px;letter-spacing:2px;padding:8px 13px;border-radius:2px;cursor:pointer;}
+
+/* ═══ FENDA ANIMS ═══ */
+@keyframes pss{0%,100%{opacity:.35;r:6}50%{opacity:1;r:10}}
+@keyframes ps {0%,100%{opacity:.3;r:5}50%{opacity:.9;r:8}}
+@keyframes pa {0%,100%{opacity:.25}50%{opacity:.8}}
+@keyframes pb {0%,100%{opacity:.2}50%{opacity:.7}}
+@keyframes pc {0%,100%{opacity:.18}50%{opacity:.6}}
+@keyframes gz {0%,100%{opacity:.07}50%{opacity:.2}}
+@keyframes flk{0%,100%{opacity:.7}48%{opacity:1}52%{opacity:.85}}
+.pss{animation:pss 1.2s ease-in-out infinite;}
+.ps {animation:ps  1.8s ease-in-out infinite;}
+.pa {animation:pa  2.2s ease-in-out infinite;}
+.pb {animation:pb  2.6s ease-in-out infinite;}
+.pc {animation:pc  3s   ease-in-out infinite;}
+.gz {animation:gz  3.5s ease-in-out infinite;pointer-events:none;}
+.flk{animation:flk 4s   ease-in-out infinite;}
+
+/* ═══ TELA DE DETALHE ═══ */
+#detail{
+  position:fixed;inset:0;z-index:100;
+  background:radial-gradient(ellipse at 25% 0%,rgba(32,22,8,.97) 0%,transparent 55%),
+             radial-gradient(ellipse at 75% 100%,rgba(16,10,4,.98) 0%,transparent 55%),
+             rgba(6,8,14,.97);
+  transform:translateY(100%);
+  transition:transform .4s cubic-bezier(.16,.84,.44,1);
+  display:flex;flex-direction:column;overflow:hidden;
+}
+#detail::before{content:'';position:absolute;inset:0;pointer-events:none;z-index:0;
+  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='turbulence' baseFrequency='0.035' numOctaves='5' seed='7' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)' opacity='0.025'/%3E%3C/svg%3E");
+  opacity:.5;}
+#detail.open{transform:translateY(0);}
+
+/* ── cabeçalho do detalhe ── */
+#dt-top{
+  position:relative;z-index:1;padding:18px 20px 0;flex-shrink:0;
+}
+.dt-nav{
+  display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;
+}
+.dt-crumb{
+  font-family:'Cinzel',serif;font-size:9px;letter-spacing:2.5px;color:var(--ink4);
+  display:flex;align-items:center;gap:6px;
+}
+.dt-crumb b{color:var(--gold);opacity:.7;}
+#btn-back{
+  display:flex;align-items:center;gap:7px;background:rgba(200,160,80,.07);
+  border:1px solid var(--border2);color:var(--ink2);padding:7px 13px;
+  border-radius:2px;cursor:pointer;font-family:'Cinzel',serif;font-size:10px;letter-spacing:2px;
+}
+.dt-line{height:1px;margin-bottom:16px;
+  background:linear-gradient(90deg,transparent,var(--gold) 30%,var(--gold) 70%,transparent);opacity:.28;}
+
+/* hero do local */
+.dt-hero{display:flex;align-items:flex-start;gap:16px;margin-bottom:6px;}
+.dt-ico{
+  width:58px;height:58px;flex-shrink:0;border:1px solid var(--border2);border-radius:5px;
+  background:rgba(200,160,80,.05);display:flex;align-items:center;justify-content:center;font-size:26px;
+}
+.dt-nb{flex:1;min-width:0;}
+.dt-type{font-family:'Cinzel',serif;font-size:8px;letter-spacing:3px;margin-bottom:5px;}
+.dt-name{font-family:'Cinzel Decorative',serif;font-size:21px;font-weight:700;line-height:1.15;color:var(--ink);}
+.dt-loc{font-size:11px;color:var(--ink3);margin-top:4px;font-style:italic;}
+
+/* tabs de revelação progressiva */
+#dt-tabs{
+  position:relative;z-index:1;display:flex;gap:2px;
+  padding:0 20px;margin-top:14px;flex-shrink:0;
+}
+.tab{
+  flex:1;padding:9px 4px;text-align:center;cursor:pointer;
+  font-family:'Cinzel',serif;font-size:9px;letter-spacing:2px;color:var(--ink4);
+  border-bottom:2px solid transparent;transition:all .2s;
+  border-top:1px solid transparent;
+  border-left:1px solid transparent;border-right:1px solid transparent;
+  border-radius:3px 3px 0 0;
+}
+.tab:hover{color:var(--ink2);}
+.tab.active{
+  color:var(--gold2);border-color:var(--border2);
+  background:rgba(200,160,80,.06);border-bottom-color:transparent;
+}
+/* linha que conecta tab ativa ao body */
+.tab-bar{height:1px;margin:0 20px;flex-shrink:0;
+  background:linear-gradient(90deg,transparent,rgba(200,160,80,.25),transparent);}
+
+/* corpo rolável */
+#dt-body{
+  position:relative;z-index:1;flex:1;overflow-y:auto;
+  padding:18px 20px 50px;-webkit-overflow-scrolling:touch;
+  scrollbar-width:thin;scrollbar-color:rgba(200,160,80,.15) transparent;
+}
+
+/* ── componentes dentro do body ── */
+.status-bar{
+  display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:3px;
+  border:1px solid;margin-bottom:18px;
+  font-family:'Cinzel',serif;font-size:10px;letter-spacing:2px;
+}
+.sjewel{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
+.sjewel.flk{animation:flk 2.5s ease-in-out infinite;}
+
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:20px;}
+.stat-box{
+  background:rgba(200,160,80,.035);border:1px solid rgba(200,160,80,.12);
+  border-radius:3px;padding:11px 13px;position:relative;overflow:hidden;
+}
+.stat-box::before{content:'';position:absolute;top:0;left:0;width:3px;height:100%;
+  background:currentColor;opacity:.25;}
+.stat-lbl{font-family:'Cinzel',serif;font-size:8px;letter-spacing:2px;color:var(--ink3);margin-bottom:4px;}
+.stat-val{font-family:'Cinzel Decorative',serif;font-size:13px;font-weight:700;line-height:1.2;}
+
+.sec{margin-bottom:20px;}
+.sec-title{
+  font-family:'Cinzel',serif;font-size:8.5px;letter-spacing:4px;color:var(--golddim);
+  padding-bottom:7px;margin-bottom:11px;
+  border-bottom:1px solid rgba(200,160,80,.18);
+  display:flex;align-items:center;gap:7px;
+}
+.sec-title::before{content:'✦';font-size:7px;opacity:.7;}
+.body-text{font-size:14.5px;color:var(--ink2);line-height:1.88;}
+.body-text em{color:var(--gold2);font-style:italic;}
+
+.seals{display:flex;flex-wrap:wrap;gap:6px;}
+.seal{
+  font-family:'Cinzel',serif;font-size:8.5px;letter-spacing:1.5px;
+  padding:5px 10px;border-radius:2px;border:1px solid;
+}
+
+.threat-list{display:flex;flex-direction:column;gap:8px;}
+.threat-row{
+  display:flex;align-items:center;gap:12px;padding:9px 13px;border-radius:3px;
+  border-left:2px solid;border-top:1px solid transparent;border-right:1px solid transparent;border-bottom:1px solid transparent;
+}
+.t-rank{font-family:'Cinzel Decorative',serif;font-size:15px;font-weight:700;width:26px;text-align:center;flex-shrink:0;}
+.t-body{flex:1;}
+.t-label{font-size:13px;color:var(--ink2);margin-bottom:5px;}
+.t-track{height:3px;background:rgba(200,160,80,.1);border-radius:2px;overflow:hidden;}
+.t-fill{height:100%;border-radius:2px;}
+
+.scroll-box{
+  background:rgba(200,160,80,.035);border:1px solid rgba(200,160,80,.22);
+  border-left:3px solid var(--golddim);border-radius:0 3px 3px 0;
+  padding:15px 17px;font-size:13.5px;color:var(--ink3);line-height:1.88;font-style:italic;
+  position:relative;
+}
+.scroll-box::before{content:'"';position:absolute;top:-2px;left:10px;
+  font-family:'IM Fell English',serif;font-size:44px;color:var(--golddim);opacity:.2;line-height:1;}
+.scroll-box::after{content:'— ARQUIVO CONFIDENCIAL —';display:block;margin-top:10px;
+  font-family:'Cinzel',serif;font-size:8px;letter-spacing:4px;color:var(--gold);opacity:.35;text-align:right;}
+
+.person-card{
+  display:flex;align-items:flex-start;gap:14px;padding:13px 15px;border-radius:3px;
+  background:rgba(200,160,80,.04);border:1px solid rgba(200,160,80,.14);margin-bottom:10px;
+}
+.person-ico{
+  width:44px;height:44px;border-radius:50%;flex-shrink:0;
+  border:1px solid rgba(200,160,80,.3);background:rgba(200,160,80,.06);
+  display:flex;align-items:center;justify-content:center;font-size:20px;
+}
+.person-info{flex:1;}
+.person-name{font-family:'Cinzel',serif;font-size:13px;font-weight:700;color:var(--ink);margin-bottom:3px;}
+.person-role{font-family:'Cinzel',serif;font-size:8px;letter-spacing:2px;color:var(--gold);opacity:.75;margin-bottom:5px;}
+.person-desc{font-size:13px;color:var(--ink3);line-height:1.7;}
+
+.warn-box{
+  background:rgba(180,20,60,.08);border:1px solid rgba(180,20,60,.3);border-radius:3px;
+  padding:12px 15px;margin-bottom:16px;
+  font-family:'Cinzel',serif;font-size:10px;letter-spacing:2px;color:#ff6688;
+  display:flex;gap:10px;align-items:flex-start;
+}
+.warn-ico{font-size:16px;flex-shrink:0;margin-top:-1px;}
+
+.mystery-box{
+  background:rgba(120,40,184,.06);border:1px solid rgba(120,40,184,.25);border-radius:3px;
+  padding:14px 16px;font-size:13px;color:var(--ink3);line-height:1.85;
+  font-style:italic;position:relative;
+}
+.mystery-box::before{content:'';position:absolute;top:8px;right:12px;
+  width:18px;height:18px;border-radius:50%;
+  background:radial-gradient(circle,rgba(120,40,184,.5),transparent 70%);}
+
+/* ═══ LEGENDA ═══ */
+#legpanel{
+  position:fixed;inset:0;z-index:200;
+  background:rgba(4,6,12,.98);
+  transform:translateX(-100%);transition:transform .32s cubic-bezier(.16,.84,.44,1);
+  overflow-y:auto;padding:22px 20px 60px;
+  -webkit-overflow-scrolling:touch;scrollbar-width:none;
+}
+#legpanel::-webkit-scrollbar{display:none;}
+#legpanel.open{transform:translateX(0);}
+.leg-hdr{display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:22px;padding-bottom:16px;border-bottom:1px solid var(--border2);}
+.leg-title{font-family:'Cinzel Decorative',serif;font-size:18px;color:var(--gold2);letter-spacing:2px;}
+.leg-sec{margin-bottom:24px;}
+.leg-stit{font-family:'Cinzel',serif;font-size:8px;letter-spacing:4px;color:var(--golddim);
+  border-bottom:1px solid rgba(200,160,80,.12);padding-bottom:7px;margin-bottom:12px;}
+.li{display:flex;align-items:flex-start;gap:12px;padding:8px 2px;
+  border-bottom:1px solid rgba(200,160,80,.07);}
+.ld{width:12px;height:12px;border-radius:50%;flex-shrink:0;margin-top:3px;}
+.lq{width:16px;height:11px;border-radius:2px;flex-shrink:0;margin-top:3px;}
+.lt{font-size:14px;color:var(--ink2);line-height:1.4;}
+.ls{font-family:'Cinzel',serif;font-size:9px;color:var(--ink4);letter-spacing:1px;margin-top:2px;}
+
+/* ═══ HINT ═══ */
+#hint{
+  position:fixed;bottom:22px;left:50%;transform:translateX(-50%);z-index:9;
+  background:rgba(4,6,12,.88);border:1px solid var(--border2);border-radius:20px;
+  padding:9px 18px;font-family:'Cinzel',serif;font-size:9px;letter-spacing:2px;
+  color:var(--ink3);white-space:nowrap;pointer-events:none;transition:opacity .6s;
+}
+#hint.gone{opacity:0;}
+
+/* ═══ ZOOM ═══ */
+#zc{position:fixed;bottom:18px;right:14px;display:flex;flex-direction:column;gap:4px;z-index:9;}
+.zb{width:38px;height:38px;background:rgba(4,6,12,.88);border:1px solid var(--border2);
+  color:var(--gold);font-size:18px;border-radius:2px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;font-family:monospace;}
+@media(pointer:coarse){#zc{display:none;}}
+</style>
+</head>
+<body>
+
+<header id="hdr">
+  <div><div class="ht">ÊXODOS</div><div class="hs">MAPA MUNDI · CLASSIFICADO · ACADEMIA CENTRAL</div></div>
+  <button class="hbtn" onclick="toggleLeg()">☰</button>
+</header>
+
+<div id="mapwrap">
+<svg id="mapsvg" viewBox="0 0 900 640" xmlns="http://www.w3.org/2000/svg">
+<defs>
+  <radialGradient id="ocean" cx="42%" cy="55%" r="75%">
+    <stop offset="0%" stop-color="#0e1828"/><stop offset="50%" stop-color="#080f1c"/><stop offset="100%" stop-color="#040810"/>
+  </radialGradient>
+  <linearGradient id="rn" x1="0%" y1="0%" x2="100%" y2="100%">
+    <stop offset="0%" stop-color="#1e2c1e"/><stop offset="100%" stop-color="#131a13"/>
+  </linearGradient>
+  <linearGradient id="rc" x1="0%" y1="0%" x2="80%" y2="100%">
+    <stop offset="0%" stop-color="#221e12"/><stop offset="100%" stop-color="#16140e"/>
+  </linearGradient>
+  <linearGradient id="re" x1="0%" y1="0%" x2="100%" y2="100%">
+    <stop offset="0%" stop-color="#261818"/><stop offset="100%" stop-color="#160e0e"/>
+  </linearGradient>
+  <linearGradient id="rw" x1="100%" y1="0%" x2="0%" y2="100%">
+    <stop offset="0%" stop-color="#181828"/><stop offset="100%" stop-color="#10101a"/>
+  </linearGradient>
+  <linearGradient id="rs" x1="0%" y1="0%" x2="60%" y2="100%">
+    <stop offset="0%" stop-color="#2c2010"/><stop offset="100%" stop-color="#1a140a"/>
+  </linearGradient>
+  <linearGradient id="rv" x1="0%" y1="0%" x2="100%" y2="100%">
+    <stop offset="0%" stop-color="#182016"/><stop offset="100%" stop-color="#101610"/>
+  </linearGradient>
+
+  <filter id="fg"  x="-70%"  y="-70%"  width="240%" height="240%"><feGaussianBlur stdDeviation="4"   result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  <filter id="fgr" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="7"   result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  <filter id="fgp" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="8"   result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  <filter id="sg"  x="-50%"  y="-50%"  width="200%" height="200%"><feGaussianBlur stdDeviation="2.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  <filter id="b12"><feGaussianBlur stdDeviation="12"/></filter>
+  <filter id="b7" ><feGaussianBlur stdDeviation="7"/></filter>
+  <filter id="b4" ><feGaussianBlur stdDeviation="4"/></filter>
+
+  <pattern id="hatch" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(42)">
+    <line x1="0" y1="0" x2="0" y2="7" stroke="#6a1010" stroke-width="1.1"/>
+  </pattern>
+  <pattern id="waves" width="40" height="14" patternUnits="userSpaceOnUse">
+    <path d="M0,7 Q10,4 20,7 Q30,10 40,7" stroke="#1a3050" stroke-width="0.5" fill="none" opacity="0.55"/>
+  </pattern>
+  <pattern id="sdots" width="28" height="28" patternUnits="userSpaceOnUse">
+    <circle cx="14" cy="14" r="0.6" fill="#c8a050" opacity="0.09"/>
+  </pattern>
+  <pattern id="desert" width="10" height="10" patternUnits="userSpaceOnUse">
+    <circle cx="3"  cy="3"  r="0.5" fill="#c8a050" opacity="0.12"/>
+    <circle cx="8"  cy="7"  r="0.4" fill="#c8a050" opacity="0.08"/>
+  </pattern>
+  <pattern id="snow" width="12" height="12" patternUnits="userSpaceOnUse">
+    <circle cx="6"  cy="6"  r="0.7" fill="#d8e8f0" opacity="0.2"/>
+    <circle cx="2"  cy="10" r="0.4" fill="#d8e8f0" opacity="0.12"/>
+    <circle cx="10" cy="2"  r="0.5" fill="#d8e8f0" opacity="0.15"/>
+  </pattern>
+  <pattern id="forest" width="10" height="10" patternUnits="userSpaceOnUse">
+    <circle cx="5"  cy="5"  r="1"   fill="#3a6028" opacity="0.28"/>
+    <circle cx="1"  cy="9"  r="0.7" fill="#2a5020" opacity="0.18"/>
+    <circle cx="9"  cy="1"  r="0.8" fill="#3a6028" opacity="0.22"/>
+  </pattern>
+</defs>
+
+<!-- OCEANO -->
+<rect width="900" height="640" fill="url(#ocean)"/>
+<rect width="900" height="640" fill="url(#waves)" opacity=".7"/>
+<rect width="900" height="640" fill="url(#sdots)"/>
+
+<!-- ═══════════════════════════════ -->
+<!-- CONTINENTES — cartografia de fantasia, formas orgânicas deliberadas -->
+<!-- ═══════════════════════════════ -->
+
+<!-- VALDRIS — massa continental norte, costa recortada com fiordes -->
+<g onclick="S('norte')" style="cursor:pointer">
+  <!-- Corpo principal -->
+  <path d="
+    M 88,148 C 84,136 80,120 80,104
+    C 80,86 86,68 96,54
+    C 108,38 126,28 148,22
+    C 170,16 196,16 222,18
+    C 246,20 268,24 288,22
+    C 308,20 326,14 346,16
+    C 364,18 378,28 390,42
+    C 400,54 406,70 408,88
+    C 410,106 406,124 400,138
+    C 394,152 384,162 370,168
+    C 354,174 334,174 312,172
+    C 290,170 266,166 244,166
+    C 224,166 206,170 190,172
+    C 174,174 158,172 144,166
+    C 128,160 110,156 96,154
+    Z"
+    fill="url(#rn)" stroke="#2a4232" stroke-width="1.5"/>
+  <!-- Costa norte irregular — fiordes -->
+  <path d="M88,148 C84,136 80,120 80,104 C80,86 86,68 96,54 C100,46 106,38 116,34
+    C 110,42 106,52 108,60 C 110,66 116,68 118,62 C 120,56 118,46 124,40
+    C 130,34 140,30 148,22"
+    fill="none" stroke="#1e3828" stroke-width=".8" opacity=".6"/>
+  <!-- Neve / gelo no norte -->
+  <path d="M 96,54 C 108,38 126,28 148,22 C 170,16 196,16 222,18
+    C 246,20 268,24 288,22 C 308,20 326,14 346,16
+    C 360,18 373,26 384,38
+    C 356,30 326,26 296,26 C 266,26 236,28 210,32
+    C 184,36 158,44 136,54 C 116,62 100,56 96,54 Z"
+    fill="#c8d8e8" opacity=".1" pointer-events="none"/>
+  <rect x="80" y="16" width="336" height="100" fill="url(#snow)" opacity=".5" pointer-events="none"/>
+  <!-- Cadeias de montanha -->
+  <g opacity=".48" pointer-events="none">
+    <!-- Pico oeste -->
+    <path d="M148,84 L156,64 L164,84" fill="none" stroke="#4a6850" stroke-width="1.1"/>
+    <path d="M152,84 L156,70 L160,84" fill="#304830" opacity=".45"/>
+    <path d="M156,64 L152,72 L160,72 Z" fill="#c8dce8" opacity=".55"/>
+    <!-- Pico central -->
+    <path d="M192,78 L202,56 L212,78" fill="none" stroke="#4a6850" stroke-width="1.1"/>
+    <path d="M197,78 L202,62 L207,78" fill="#304830" opacity=".45"/>
+    <path d="M202,56 L198,64 L206,64 Z" fill="#c8dce8" opacity=".55"/>
+    <!-- Pico leste -->
+    <path d="M238,82 L246,62 L254,82" fill="none" stroke="#4a6850" stroke-width="1.1"/>
+    <path d="M242,82 L246,68 L250,82" fill="#304830" opacity=".45"/>
+    <path d="M246,62 L242,70 L250,70 Z" fill="#c8dce8" opacity=".55"/>
+    <!-- Pico extra leste -->
+    <path d="M284,76 L290,60 L296,76" fill="none" stroke="#4a6850" stroke-width="1"/>
+    <path d="M290,60 L287,68 L293,68 Z" fill="#c8dce8" opacity=".45"/>
+  </g>
+  <text x="236" y="116" font-family="Cinzel,serif" font-size="13" fill="#9abca8" opacity=".58" text-anchor="middle" letter-spacing="5" pointer-events="none">VALDRIS</text>
+  <text x="236" y="131" font-family="IM Fell English,serif" font-size="9" fill="#7a9888" opacity=".36" text-anchor="middle" font-style="italic" pointer-events="none">Norte Glaciar</text>
+</g>
+
+<!-- OSSARA — costa oeste com penhascos, litoral irregular -->
+<g onclick="S('oeste')" style="cursor:pointer">
+  <path d="
+    M 42,168
+    C 66,162 94,162 118,166
+    C 140,170 160,176 178,180
+    C 196,184 212,184 226,180
+    C 242,176 256,168 268,166
+    C 280,164 290,168 296,176
+    C 302,184 302,196 296,208
+    C 290,220 280,230 268,238
+    C 256,246 242,250 228,252
+    C 214,254 200,252 186,248
+    C 172,244 160,238 148,236
+    C 136,234 124,236 114,244
+    C 104,252 96,264 90,278
+    C 84,292 80,308 78,322
+    C 76,336 76,350 80,362
+    C 84,372 90,378 96,380
+    C 102,382 108,378 112,372
+    C 116,364 116,354 112,346
+    C 108,338 102,334 98,334
+    C 94,334 92,338 94,344
+    C 96,350 100,354 104,354
+    C 108,354 112,350 112,344
+    L 114,358
+    C 118,368 128,374 140,376
+    C 152,378 164,374 172,366
+    C 180,358 184,346 182,334
+    C 180,322 174,312 164,306
+    C 154,300 142,298 132,302
+    C 122,306 114,314 110,322
+    C 106,310 106,296 112,284
+    C 118,272 128,264 140,260
+    C 152,256 166,258 178,264
+    C 190,270 200,280 206,292
+    C 212,302 214,314 210,324
+    C 206,316 198,310 188,310
+    C 178,310 170,318 170,328
+    C 170,338 178,344 188,342
+    C 196,340 202,332 202,322
+    L 208,340
+    C 212,354 212,368 206,380
+    C 200,392 190,400 178,404
+    C 166,408 154,406 144,400
+    Z"
+    fill="url(#rw)" stroke="#1e2040" stroke-width="1.5"/>
+  <!-- Linhas de penhasco na costa oeste -->
+  <g pointer-events="none" opacity=".28" stroke="#4848a0" stroke-width=".7" fill="none">
+    <path d="M42,178 C52,174 62,174 70,178"/>
+    <path d="M42,210 C52,206 62,206 68,210"/>
+    <path d="M42,244 C52,248 62,248 66,244"/>
+    <path d="M42,278 C52,274 62,274 66,278"/>
+  </g>
+  <text x="172" y="288" font-family="Cinzel,serif" font-size="12" fill="#8888c0" opacity=".56" text-anchor="middle" letter-spacing="4" pointer-events="none">OSSARA</text>
+  <text x="172" y="303" font-family="IM Fell English,serif" font-size="9" fill="#686898" opacity=".36" text-anchor="middle" font-style="italic" pointer-events="none">Penhascos do Oeste</text>
+</g>
+
+<!-- MIROVA — grande massa central, planícies, ligada ao sul -->
+<g onclick="S('central')" style="cursor:pointer">
+  <path d="
+    M 296,168
+    C 316,162 338,158 362,156
+    C 386,154 412,154 438,156
+    C 464,158 490,162 514,166
+    C 538,170 560,176 580,182
+    C 600,188 618,196 632,206
+    C 646,216 656,230 660,246
+    C 664,262 660,280 652,294
+    C 644,308 632,318 618,324
+    C 604,330 588,330 572,328
+    C 556,326 540,320 524,316
+    C 508,312 492,310 476,314
+    C 460,318 446,326 434,338
+    C 422,350 412,364 404,378
+    C 396,364 388,350 378,338
+    C 366,326 352,318 338,314
+    C 322,310 306,314 292,322
+    C 278,330 266,342 258,356
+    C 250,342 246,326 248,310
+    C 250,294 258,280 270,270
+    C 282,260 298,254 312,252
+    C 326,250 340,252 350,258
+    C 338,244 330,228 328,212
+    C 326,196 330,180 338,170
+    Z"
+    fill="url(#rc)" stroke="#302c16" stroke-width="1.5"/>
+  <!-- Extensão nordeste de Mirova -->
+  <path d="
+    M 338,170
+    C 346,160 360,154 378,152
+    C 398,150 420,152 444,156
+    C 468,160 492,166 514,172
+    C 538,178 560,184 578,192
+    C 598,200 614,210 626,222
+    C 638,234 644,248 642,264
+    C 640,278 632,290 620,298
+    C 610,304 598,306 584,304
+    C 568,302 552,296 538,290
+    C 524,284 510,280 496,280
+    C 480,280 466,284 454,292
+    C 442,300 432,312 424,326
+    C 418,312 410,300 400,290
+    C 388,280 374,272 360,268
+    C 346,264 330,266 318,272
+    C 310,256 308,238 312,222
+    C 316,206 326,194 338,186
+    Z"
+    fill="url(#rc)" stroke="#302c16" stroke-width="1.5"/>
+  <text x="490" y="226" font-family="Cinzel,serif" font-size="14" fill="#b8a878" opacity=".56" text-anchor="middle" letter-spacing="5" pointer-events="none">MIROVA</text>
+  <text x="490" y="242" font-family="IM Fell English,serif" font-size="9" fill="#988868" opacity=".36" text-anchor="middle" font-style="italic" pointer-events="none">Planícies Centrais</text>
+</g>
+
+<!-- KETHARA — grande deserto sul, formato amplo e irregular -->
+<g onclick="S('sul')" style="cursor:pointer">
+  <path d="
+    M 168,402
+    C 184,394 204,390 226,390
+    C 248,390 270,394 292,400
+    C 314,406 334,416 352,424
+    C 370,432 386,438 402,440
+    C 418,442 434,440 450,434
+    C 466,428 480,418 494,408
+    C 508,398 522,390 538,386
+    C 554,382 572,384 590,390
+    C 606,396 620,406 632,418
+    C 644,430 652,444 656,460
+    C 660,476 658,492 652,506
+    C 646,520 636,530 624,536
+    C 610,542 594,542 578,538
+    C 562,534 548,526 534,516
+    C 520,506 506,496 490,490
+    C 474,484 456,482 438,486
+    C 420,490 404,500 390,512
+    C 376,524 364,538 352,550
+    C 340,562 328,572 314,576
+    C 300,580 286,576 274,566
+    C 262,556 252,540 246,522
+    C 240,504 238,484 240,464
+    C 242,444 248,426 256,414
+    C 246,410 218,400 190,398
+    C 178,398 168,400 168,402
+    Z"
+    fill="url(#rs)" stroke="#382810" stroke-width="1.5"/>
+  <!-- Textura de areia -->
+  <path d="
+    M 226,390 C 270,390 330,408 390,440 C 450,434 510,390 590,390 C 630,390 656,426 656,460
+    C 652,510 614,542 564,540 C 510,538 448,498 402,462
+    C 356,426 290,394 240,394 Z"
+    fill="url(#desert)" pointer-events="none"/>
+  <text x="414" y="476" font-family="Cinzel,serif" font-size="14" fill="#c8a868" opacity=".56" text-anchor="middle" letter-spacing="5" pointer-events="none">KETHARA</text>
+  <text x="414" y="492" font-family="IM Fell English,serif" font-size="9" fill="#a88848" opacity=".36" text-anchor="middle" font-style="italic" pointer-events="none">Deserto do Sul</text>
+</g>
+
+<!-- SEIRYN — arquipélago leste, forma oval principal + ilhas menores -->
+<g onclick="S('leste')" style="cursor:pointer">
+  <!-- Ilha principal — mais orgânica, costa leste irregular -->
+  <path d="
+    M 686,58
+    C 700,50 718,44 738,42
+    C 758,40 780,44 800,52
+    C 820,60 838,72 852,88
+    C 864,104 870,122 868,140
+    C 866,158 858,174 846,186
+    C 834,198 818,204 802,204
+    C 786,204 770,198 756,188
+    C 742,178 730,164 722,150
+    C 714,136 710,120 712,106
+    C 708,98 700,90 696,78
+    C 692,68 686,62 686,58
+    Z"
+    fill="url(#re)" stroke="#422020" stroke-width="1.5"/>
+  <!-- Ilha sul de Seiryn -->
+  <path d="
+    M 762,268
+    C 774,260 790,256 808,258
+    C 826,260 842,268 852,280
+    C 862,292 864,308 858,322
+    C 852,336 840,344 826,346
+    C 812,348 798,342 788,332
+    C 778,322 772,308 772,294
+    C 772,282 766,274 762,268
+    Z"
+    fill="url(#re)" stroke="#422020" stroke-width="1.4" opacity=".88"/>
+  <!-- Ilhotas espalhadas -->
+  <path d="M 652,92 C 658,86 668,84 676,88 C 684,92 686,100 682,106 C 678,112 668,114 660,110 C 652,106 650,98 652,92 Z"
+    fill="#201414" stroke="#422020" stroke-width="1" opacity=".6"/>
+  <path d="M 870,234 C 876,228 884,228 888,234 C 892,240 890,248 884,250 C 878,252 870,248 870,242 Z"
+    fill="#201414" stroke="#422020" stroke-width="1" opacity=".55"/>
+  <path d="M 876,280 C 880,276 886,276 888,282 C 890,288 886,292 882,292 C 878,292 874,288 876,280 Z"
+    fill="#201414" stroke="#422020" stroke-width=".8" opacity=".5"/>
+  <text x="780" y="142" font-family="Cinzel,serif" font-size="12" fill="#c08888" opacity=".56" text-anchor="middle" letter-spacing="4" pointer-events="none">SEIRYN</text>
+  <text x="780" y="157" font-family="IM Fell English,serif" font-size="9" fill="#906868" opacity=".36" text-anchor="middle" font-style="italic" pointer-events="none">Arquipélago do Leste</text>
+</g>
+
+<!-- VORRATH — selva sul-leste, formato peninsular com recortes -->
+<g onclick="S('vorrath')" style="cursor:pointer">
+  <path d="
+    M 660,342
+    C 672,330 690,322 710,318
+    C 730,314 752,316 772,324
+    C 792,332 808,346 818,362
+    C 828,378 830,396 826,412
+    C 822,428 812,442 800,452
+    C 788,462 774,468 760,468
+    C 746,468 732,462 720,452
+    C 708,442 700,428 696,414
+    C 692,400 692,384 696,370
+    C 692,364 678,354 668,348
+    Z"
+    fill="url(#rv)" stroke="#1a2c16" stroke-width="1.5" opacity=".92"/>
+  <!-- Textura de floresta -->
+  <path d="M 660,342 C 680,322 724,312 770,326 C 808,338 830,372 826,412
+    C 820,446 794,468 760,470 C 726,472 694,450 684,422 C 672,394 664,366 660,342 Z"
+    fill="url(#forest)" pointer-events="none"/>
+  <!-- Estreito que liga Vorrath a Seiryn -->
+  <path d="M 742,310 C 750,302 762,298 774,302 C 782,306 784,316 778,320
+    C 770,316 758,314 748,318 Z"
+    fill="url(#rv)" stroke="#1a2c16" stroke-width="1" opacity=".6"/>
+  <text x="744" y="398" font-family="Cinzel,serif" font-size="10" fill="#90b880" opacity=".5" text-anchor="middle" letter-spacing="3" pointer-events="none">VORRATH</text>
+  <text x="744" y="413" font-family="IM Fell English,serif" font-size="8" fill="#709060" opacity=".3" text-anchor="middle" font-style="italic" pointer-events="none">Selva Sul-Leste</text>
+</g>
+
+<!-- ── Ilhas decorativas no oceano ── -->
+<!-- Ilhas ao sul, rota marítima Kethara -->
+<path d="M 544,572 C 550,566 560,564 570,568 C 580,572 584,580 580,586
+  C 576,592 566,594 558,590 C 550,586 544,580 544,572 Z"
+  fill="#1e1a0c" stroke="#382810" stroke-width="1" opacity=".5"/>
+<path d="M 578,582 C 582,578 590,578 594,582 C 598,586 596,592 590,592
+  C 584,592 578,588 578,582 Z"
+  fill="#1e1a0c" stroke="#382810" stroke-width="1" opacity=".45"/>
+<!-- Ilha ao norte do oceano oeste -->
+<path d="M 38,502 C 44,496 54,494 62,498 C 70,502 72,510 68,516
+  C 64,522 54,524 46,520 C 38,516 36,508 38,502 Z"
+  fill="#14141e" stroke="#1e2040" stroke-width="1" opacity=".48"/>
+
+<!-- ── Montanhas da Passagem Fria (fronteira Valdris-Mirova) ── -->
+<g pointer-events="none" opacity=".4" fill="none" stroke="#506040">
+  <path d="M 350,148 L 358,132 L 366,148" stroke-width="1"/>
+  <path d="M 354,148 L 358,138 L 362,148" fill="#404c32" opacity=".4" stroke="none"/>
+  <path d="M 358,132 L 354,140 L 362,140 Z" fill="#c8d8dc" opacity=".4" stroke="none"/>
+  <path d="M 368,154 L 374,140 L 380,154" stroke-width="1"/>
+  <path d="M 374,140 L 370,148 L 378,148 Z" fill="#c8d8dc" opacity=".38" stroke="none"/>
+</g>
+
+<!-- ══ ZONAS MORTAS ══ -->
+
+<!-- Cratera de Oshen -->
+<g pointer-events="none">
+  <ellipse cx="484" cy="206" rx="108" ry="84" fill="#880000" class="gz" filter="url(#b12)" opacity=".75"/>
+  <ellipse cx="484" cy="206" rx="70"  ry="54" fill="#660000" class="gz" filter="url(#b7)"  opacity=".8"/>
+  <path d="M420,148 C438,138 460,134 482,134 C504,134 526,140 542,150 C558,160 568,174 572,190 C576,206 572,224 562,238 C552,252 538,262 520,268 C502,274 482,274 464,268 C446,262 430,252 420,238 C410,224 406,206 408,190 C410,174 412,158 420,148 Z"
+    fill="url(#hatch)" stroke="#701010" stroke-width="1.5" opacity=".9"/>
+  <path d="M420,148 C438,138 460,134 482,134 C504,134 526,140 542,150 C558,160 568,174 572,190 C576,206 572,224 562,238 C552,252 538,262 520,268 C502,274 482,274 464,268 C446,262 430,252 420,238 C410,224 406,206 408,190 C410,174 412,158 420,148 Z"
+    fill="#1a0404" opacity=".65"/>
+  <text x="488" y="199" font-family="Cinzel,serif" font-size="8.5" fill="#cc4040" opacity=".95" text-anchor="middle" letter-spacing="2">CRATERA</text>
+  <text x="488" y="212" font-family="Cinzel,serif" font-size="8.5" fill="#aa3030" opacity=".85" text-anchor="middle" letter-spacing="2">DE OSHEN</text>
+</g>
+
+<!-- Cinzas de Velath -->
+<g pointer-events="none">
+  <ellipse cx="148" cy="254" rx="88" ry="68" fill="#880000" class="gz" filter="url(#b12)" opacity=".65"/>
+  <ellipse cx="148" cy="254" rx="58" ry="44" fill="#550000" class="gz" filter="url(#b7)"  opacity=".7"/>
+  <path d="M98,196 C116,184 136,180 156,180 C176,180 196,188 210,200 C224,212 230,228 228,246 C226,264 218,280 204,292 C190,304 172,310 154,308 C136,306 120,296 108,282 C96,268 90,248 92,230 C94,212 96,208 98,196 Z"
+    fill="url(#hatch)" stroke="#701010" stroke-width="1.5" opacity=".88"/>
+  <path d="M98,196 C116,184 136,180 156,180 C176,180 196,188 210,200 C224,212 230,228 228,246 C226,264 218,280 204,292 C190,304 172,310 154,308 C136,306 120,296 108,282 C96,268 90,248 92,230 C94,212 96,208 98,196 Z"
+    fill="#1a0404" opacity=".6"/>
+  <text x="156" y="246" font-family="Cinzel,serif" font-size="8.5" fill="#cc4040" opacity=".95" text-anchor="middle" letter-spacing="2">CINZAS DE</text>
+  <text x="156" y="259" font-family="Cinzel,serif" font-size="8.5" fill="#aa3030" opacity=".85" text-anchor="middle" letter-spacing="2">VELATH</text>
+</g>
+
+<!-- Campo Silencioso -->
+<g pointer-events="none">
+  <ellipse cx="740" cy="422" rx="78" ry="60" fill="#880000" class="gz" filter="url(#b12)" opacity=".6"/>
+  <ellipse cx="740" cy="422" rx="52" ry="40" fill="#550000" class="gz" filter="url(#b7)"  opacity=".65"/>
+  <path d="M686,376 C704,362 726,356 748,356 C770,356 792,366 806,380 C820,394 826,412 822,430 C818,448 806,464 790,474 C774,484 754,486 736,482 C718,478 700,468 688,454 C676,440 670,422 670,406 C670,390 678,390 686,376 Z"
+    fill="url(#hatch)" stroke="#701010" stroke-width="1.5" opacity=".85"/>
+  <path d="M686,376 C704,362 726,356 748,356 C770,356 792,366 806,380 C820,394 826,412 822,430 C818,448 806,464 790,474 C774,484 754,486 736,482 C718,478 700,468 688,454 C676,440 670,422 670,406 C670,390 678,390 686,376 Z"
+    fill="#1a0404" opacity=".55"/>
+  <text x="744" y="414" font-family="Cinzel,serif" font-size="8.5" fill="#cc4040" opacity=".95" text-anchor="middle" letter-spacing="2">CAMPO</text>
+  <text x="744" y="427" font-family="Cinzel,serif" font-size="8.5" fill="#aa3030" opacity=".85" text-anchor="middle" letter-spacing="2">SILENCIOSO</text>
+</g>
+
+<!-- Halo violeta Cume Sangrento -->
+<ellipse cx="312" cy="100" rx="52" ry="40" fill="#5010a0" class="gz" filter="url(#b12)" opacity=".45" pointer-events="none"/>
+
+<!-- ══ CIDADES ══ -->
+
+<!-- ACADEMIA — estrela dupla ornamental -->
+<g onclick="S('academia')" style="cursor:pointer" filter="url(#fg)">
+  <circle cx="512" cy="294" r="24" fill="rgba(200,160,80,.05)" stroke="#c8a050" stroke-width=".8" opacity=".2" class="pa"/>
+  <circle cx="512" cy="294" r="17" fill="rgba(200,160,80,.08)" stroke="#c8a050" stroke-width="1.2" opacity=".5"/>
+  <path d="M512,282 L514.8,290.5 L524,290.5 L516.5,296 L519,304 L512,299.5 L505,304 L507.5,296 L500,290.5 L509.2,290.5 Z"
+    fill="#e8c870" opacity=".95"/>
+  <circle cx="512" cy="294" r="2.8" fill="#f8e090" opacity=".95"/>
+  <text x="512" y="318" text-anchor="middle" font-family="Cinzel,serif" font-size="9" fill="#e8c070" letter-spacing="2" opacity=".93" pointer-events="none">ACADEMIA</text>
+</g>
+
+<!-- KAEDRYN — torre com ameias -->
+<g onclick="S('kaedryn')" style="cursor:pointer" filter="url(#sg)">
+  <circle cx="200" cy="100" r="16" fill="rgba(200,160,80,.06)" stroke="#c8a050" stroke-width="1" opacity=".38"/>
+  <rect x="196" y="96" width="8" height="10" fill="#d4aa60" opacity=".82"/>
+  <polygon points="200,88 193,96 207,96" fill="#d4aa60" opacity=".9"/>
+  <rect x="193" y="93" width="2" height="3" fill="#d4aa60" opacity=".9"/>
+  <rect x="197" y="93" width="2" height="3" fill="#d4aa60" opacity=".9"/>
+  <rect x="201" y="93" width="2" height="3" fill="#d4aa60" opacity=".9"/>
+  <text x="200" y="120" text-anchor="middle" font-family="Cinzel,serif" font-size="9" fill="#d4aa60" letter-spacing="1.5" opacity=".9" pointer-events="none">KAEDRYN</text>
+</g>
+
+<!-- OSSIAN -->
+<g onclick="S('ossian')" style="cursor:pointer" filter="url(#sg)">
+  <circle cx="128" cy="278" r="16" fill="rgba(200,160,80,.06)" stroke="#c8a050" stroke-width="1" opacity=".38"/>
+  <rect x="124" y="272" width="8" height="10" fill="#d4aa60" opacity=".82"/>
+  <polygon points="128,264 121,272 135,272" fill="#d4aa60" opacity=".9"/>
+  <rect x="121" y="269" width="2" height="3" fill="#d4aa60" opacity=".9"/>
+  <rect x="125" y="269" width="2" height="3" fill="#d4aa60" opacity=".9"/>
+  <rect x="129" y="269" width="2" height="3" fill="#d4aa60" opacity=".9"/>
+  <text x="128" y="298" text-anchor="middle" font-family="Cinzel,serif" font-size="9" fill="#d4aa60" letter-spacing="1.5" opacity=".9" pointer-events="none">OSSIAN</text>
+</g>
+
+<!-- SEIRYN-ALTA — torres duplas -->
+<g onclick="S('seirynalta')" style="cursor:pointer" filter="url(#fg)">
+  <circle cx="782" cy="138" r="18" fill="rgba(200,160,80,.08)" stroke="#c8a050" stroke-width="1.4" opacity=".5"/>
+  <rect x="773" y="130" width="7" height="14" fill="#d4aa60" opacity=".82"/>
+  <rect x="782" y="128" width="7" height="16" fill="#d4aa60" opacity=".88"/>
+  <polygon points="776.5,120 769,130 784,130" fill="#d4aa60" opacity=".9"/>
+  <polygon points="785.5,118 778,128 793,128" fill="#e8c070" opacity=".95"/>
+  <circle cx="785.5" cy="116" r="2.5" fill="#f8e090" opacity=".9"/>
+  <text x="782" y="160" text-anchor="middle" font-family="Cinzel,serif" font-size="9" fill="#d4aa60" letter-spacing="1.5" opacity=".9" pointer-events="none">SEIRYN-ALTA</text>
+</g>
+
+<!-- DURAS -->
+<g onclick="S('duras')" style="cursor:pointer" filter="url(#sg)">
+  <circle cx="392" cy="490" r="16" fill="rgba(200,160,80,.06)" stroke="#c8a050" stroke-width="1" opacity=".38"/>
+  <rect x="388" y="484" width="8" height="10" fill="#d4aa60" opacity=".82"/>
+  <polygon points="392,476 385,484 399,484" fill="#d4aa60" opacity=".9"/>
+  <rect x="385" y="481" width="2" height="3" fill="#d4aa60" opacity=".9"/>
+  <rect x="389" y="481" width="2" height="3" fill="#d4aa60" opacity=".9"/>
+  <rect x="393" y="481" width="2" height="3" fill="#d4aa60" opacity=".9"/>
+  <text x="392" y="510" text-anchor="middle" font-family="Cinzel,serif" font-size="9" fill="#d4aa60" letter-spacing="1.5" opacity=".9" pointer-events="none">DURAS</text>
+</g>
+
+<!-- PORTO VORRATH -->
+<g onclick="S('vorrathporto')" style="cursor:pointer">
+  <circle cx="712" cy="390" r="11" fill="rgba(200,160,80,.05)" stroke="#c8a050" stroke-width="1" opacity=".42"/>
+  <line x1="712" y1="382" x2="712" y2="396" stroke="#c8a050" stroke-width="1.2" opacity=".65"/>
+  <polygon points="712,382 720,385 712,388" fill="#c8a050" opacity=".65"/>
+  <text x="712" y="406" text-anchor="middle" font-family="Cinzel,serif" font-size="8" fill="#c8a050" letter-spacing="1" opacity=".72" pointer-events="none">P. VORRATH</text>
+</g>
+
+<!-- VIGÍLIA DO FIM -->
+<g onclick="S('vigilia')" style="cursor:pointer">
+  <circle cx="356" cy="198" r="13" fill="rgba(40,120,168,.1)" stroke="#4090b8" stroke-width="1.2" opacity=".62"/>
+  <line x1="356" y1="190" x2="356" y2="206" stroke="#5aaad8" stroke-width="2.2" opacity=".85"/>
+  <line x1="348" y1="198" x2="364" y2="198" stroke="#5aaad8" stroke-width="2.2" opacity=".85"/>
+  <circle cx="356" cy="198" r="2.5" fill="#5aaad8" opacity=".9"/>
+  <text x="356" y="216" text-anchor="middle" font-family="Cinzel,serif" font-size="8" fill="#5aaad8" letter-spacing="1.5" opacity=".88" pointer-events="none">VIGÍLIA</text>
+</g>
+
+<!-- TORRE LUMEN -->
+<g onclick="S('lumen')" style="cursor:pointer">
+  <circle cx="622" cy="198" r="13" fill="rgba(40,120,168,.1)" stroke="#4090b8" stroke-width="1.2" opacity=".62"/>
+  <line x1="622" y1="190" x2="622" y2="206" stroke="#5aaad8" stroke-width="2.2" opacity=".85"/>
+  <line x1="614" y1="198" x2="630" y2="198" stroke="#5aaad8" stroke-width="2.2" opacity=".85"/>
+  <circle cx="622" cy="198" r="2.5" fill="#5aaad8" opacity=".9"/>
+  <text x="622" y="216" text-anchor="middle" font-family="Cinzel,serif" font-size="8" fill="#5aaad8" letter-spacing="1.5" opacity=".88" pointer-events="none">T. LUMEN</text>
+</g>
+
+<!-- ══ FENDAS ══ -->
+<!-- [SS] Fenda-Mãe Oshen -->
+<g onclick="S('fendaoshen')" style="cursor:pointer" filter="url(#fgr)">
+  <g opacity=".28" class="pss">
+    <line x1="478" y1="198" x2="462" y2="182" stroke="#cc1844" stroke-width="1.1"/>
+    <line x1="478" y1="198" x2="478" y2="178" stroke="#cc1844" stroke-width="1.1"/>
+    <line x1="478" y1="198" x2="494" y2="182" stroke="#cc1844" stroke-width="1.1"/>
+    <line x1="478" y1="198" x2="498" y2="198" stroke="#cc1844" stroke-width="1.1"/>
+    <line x1="478" y1="198" x2="494" y2="214" stroke="#cc1844" stroke-width="1.1"/>
+    <line x1="478" y1="198" x2="462" y2="214" stroke="#cc1844" stroke-width="1.1"/>
+    <line x1="478" y1="198" x2="458" y2="198" stroke="#cc1844" stroke-width="1.1"/>
+  </g>
+  <circle cx="478" cy="198" r="18" fill="none" stroke="#cc1844" stroke-width=".8" opacity=".2" class="pss"/>
+  <circle cx="478" cy="198" r="11" fill="none" stroke="#cc1844" stroke-width="1.2" opacity=".45" class="pss"/>
+  <circle cx="478" cy="198" r="5.5" fill="#cc1844" class="pss" opacity=".9"/>
+  <path d="M475,193 L479,201 L476,201 L480,209" stroke="#ff6080" stroke-width="1.2" fill="none" opacity=".55"/>
+  <text x="478" y="222" text-anchor="middle" font-family="Cinzel,serif" font-size="9" fill="#ff4466" opacity=".98" letter-spacing="1" pointer-events="none">[SS]</text>
+</g>
+<!-- [S] Velath -->
+<g onclick="S('fendavelath')" style="cursor:pointer" filter="url(#fgp)">
+  <g opacity=".22" class="ps">
+    <line x1="148" y1="248" x2="136" y2="236" stroke="#7828b8" stroke-width="1"/>
+    <line x1="148" y1="248" x2="148" y2="232" stroke="#7828b8" stroke-width="1"/>
+    <line x1="148" y1="248" x2="160" y2="236" stroke="#7828b8" stroke-width="1"/>
+    <line x1="148" y1="248" x2="164" y2="248" stroke="#7828b8" stroke-width="1"/>
+    <line x1="148" y1="248" x2="132" y2="248" stroke="#7828b8" stroke-width="1"/>
+  </g>
+  <circle cx="148" cy="248" r="14" fill="none" stroke="#7828b8" stroke-width="1.2" opacity=".4" class="ps"/>
+  <circle cx="148" cy="248" r="7"  fill="none" stroke="#7828b8" stroke-width="1"   opacity=".5" class="ps"/>
+  <circle cx="148" cy="248" r="4.5" fill="#7828b8" class="ps" opacity=".88"/>
+  <path d="M145,244 L149,252 L146,252 L150,260" stroke="#c080ff" stroke-width="1" fill="none" opacity=".45"/>
+  <text x="148" y="268" text-anchor="middle" font-family="Cinzel,serif" font-size="9" fill="#a050e8" opacity=".95" pointer-events="none">[S]</text>
+</g>
+<!-- [A] Cume Sangrento -->
+<g onclick="S('fendacume')" style="cursor:pointer" filter="url(#fgr)">
+  <circle cx="312" cy="98"  r="10" fill="none" stroke="#b02020" stroke-width="1" opacity=".4" class="pa"/>
+  <circle cx="312" cy="98"  r="5.5" fill="#b02020" class="pa" opacity=".85"/>
+  <path d="M310,94 L313,101 L311,101 L314,108" stroke="#ff6060" stroke-width=".9" fill="none" opacity=".4"/>
+  <text x="312" y="113" text-anchor="middle" font-family="Cinzel,serif" font-size="8" fill="#e04040" opacity=".92" pointer-events="none">[A]</text>
+</g>
+<!-- [A] Abismo Kethara -->
+<g onclick="S('fendaabismo')" style="cursor:pointer" filter="url(#fgr)">
+  <circle cx="543" cy="445" r="10" fill="none" stroke="#b02020" stroke-width="1" opacity=".4" class="pa"/>
+  <circle cx="543" cy="445" r="5.5" fill="#b02020" class="pa" opacity=".85"/>
+  <path d="M541,441 L544,448 L542,448 L545,455" stroke="#ff6060" stroke-width=".9" fill="none" opacity=".4"/>
+  <text x="543" y="460" text-anchor="middle" font-family="Cinzel,serif" font-size="8" fill="#e04040" opacity=".92" pointer-events="none">[A]</text>
+</g>
+<!-- [B] Ravina -->
+<g onclick="S('fendaravina')" style="cursor:pointer">
+  <circle cx="642" cy="156" r="8.5" fill="none" stroke="#c86020" stroke-width="1" opacity=".38" class="pb"/>
+  <circle cx="642" cy="156" r="4.5" fill="#c86020" class="pb" opacity=".8"/>
+  <text x="642" y="170" text-anchor="middle" font-family="Cinzel,serif" font-size="8" fill="#e88040" opacity=".88" pointer-events="none">[B]</text>
+</g>
+<!-- [B] Pântano -->
+<g onclick="S('fendapantano')" style="cursor:pointer">
+  <circle cx="263" cy="380" r="8.5" fill="none" stroke="#c86020" stroke-width="1" opacity=".38" class="pb"/>
+  <circle cx="263" cy="380" r="4.5" fill="#c86020" class="pb" opacity=".8"/>
+  <text x="263" y="394" text-anchor="middle" font-family="Cinzel,serif" font-size="8" fill="#e88040" opacity=".88" pointer-events="none">[B]</text>
+</g>
+<!-- [C] Planície -->
+<g onclick="S('fendaplanicie')" style="cursor:pointer">
+  <circle cx="583" cy="320" r="7"   fill="none" stroke="#b88020" stroke-width="1" opacity=".35" class="pc"/>
+  <circle cx="583" cy="320" r="3.8" fill="#b88020" class="pc" opacity=".76"/>
+  <text x="583" y="333" text-anchor="middle" font-family="Cinzel,serif" font-size="7.5" fill="#d8a030" opacity=".86" pointer-events="none">[C]</text>
+</g>
+<!-- [C] Passagem -->
+<g onclick="S('fendapassagem')" style="cursor:pointer">
+  <circle cx="373" cy="140" r="7"   fill="none" stroke="#b88020" stroke-width="1" opacity=".35" class="pc"/>
+  <circle cx="373" cy="140" r="3.8" fill="#b88020" class="pc" opacity=".76"/>
+  <text x="373" y="153" text-anchor="middle" font-family="Cinzel,serif" font-size="7.5" fill="#d8a030" opacity=".86" pointer-events="none">[C]</text>
+</g>
+<!-- [D] Colina -->
+<g onclick="S('fendacolina')" style="cursor:pointer">
+  <circle cx="433" cy="390" r="5.5" fill="none" stroke="#507828" stroke-width=".8" opacity=".48" class="pc"/>
+  <circle cx="433" cy="390" r="3"   fill="#507828" class="pc" opacity=".74"/>
+  <text x="433" y="401" text-anchor="middle" font-family="Cinzel,serif" font-size="7" fill="#70a840" opacity=".8" pointer-events="none">[D]</text>
+</g>
+<!-- [D] Costa -->
+<g onclick="S('fendacosta')" style="cursor:pointer">
+  <circle cx="833" cy="190" r="5.5" fill="none" stroke="#507828" stroke-width=".8" opacity=".48" class="pc"/>
+  <circle cx="833" cy="190" r="3"   fill="#507828" class="pc" opacity=".74"/>
+  <text x="833" y="201" text-anchor="middle" font-family="Cinzel,serif" font-size="7" fill="#70a840" opacity=".8" pointer-events="none">[D]</text>
+</g>
+<!-- [E] pontos -->
+<circle cx="453" cy="162" r="2" fill="#287848" opacity=".42" class="pc" style="animation-delay:.5s" pointer-events="none"/>
+<circle cx="563" cy="170" r="2" fill="#287848" opacity=".42" class="pc" style="animation-delay:1.1s" pointer-events="none"/>
+<circle cx="294" cy="212" r="2" fill="#287848" opacity=".42" class="pc" style="animation-delay:1.6s" pointer-events="none"/>
+<circle cx="684" cy="300" r="2" fill="#287848" opacity=".42" class="pc" style="animation-delay:.8s" pointer-events="none"/>
+<circle cx="323" cy="460" r="2" fill="#287848" opacity=".42" class="pc" style="animation-delay:2s" pointer-events="none"/>
+<circle cx="604" cy="400" r="2" fill="#287848" opacity=".42" class="pc" style="animation-delay:.3s" pointer-events="none"/>
+<circle cx="173" cy="330" r="2" fill="#287848" opacity=".42" class="pc" style="animation-delay:1.3s" pointer-events="none"/>
+
+<!-- Vignette -->
+<rect width="900" height="54" fill="url(#ocean)" opacity=".98" pointer-events="none"/>
+<rect y="604" width="900" height="36" fill="url(#ocean)" opacity=".98" pointer-events="none"/>
+<rect width="18" height="640" fill="url(#ocean)" opacity=".85" pointer-events="none"/>
+<rect x="882" width="18" height="640" fill="url(#ocean)" opacity=".85" pointer-events="none"/>
+
+<!-- Moldura -->
+<g stroke="#c8a050" fill="none" opacity=".28" pointer-events="none">
+  <path d="M20,60 L8,60 L8,72"/><path d="M30,60 L8,60"/>
+  <path d="M880,60 L892,60 L892,72"/><path d="M870,60 L892,60"/>
+  <path d="M20,630 L8,630 L8,618"/><path d="M30,630 L8,630"/>
+  <path d="M880,630 L892,630 L892,618"/><path d="M870,630 L892,630"/>
+</g>
+<rect x="8" y="60" width="884" height="572" fill="none" stroke="#c8a050" stroke-width=".4" opacity=".12" pointer-events="none"/>
+
+<!-- Bússola -->
+<g transform="translate(858,594)" pointer-events="none">
+  <circle r="25" fill="rgba(4,6,12,.88)" stroke="#c8a050" stroke-width=".8" opacity=".48"/>
+  <circle r="17" fill="none" stroke="#c8a050" stroke-width=".4" opacity=".22"/>
+  <line x1="0" y1="-25" x2="0" y2="-17" stroke="#c8a050" stroke-width=".7" opacity=".4"/>
+  <line x1="0" y1="25" x2="0" y2="17" stroke="#c8a050" stroke-width=".7" opacity=".3"/>
+  <line x1="-25" y1="0" x2="-17" y2="0" stroke="#c8a050" stroke-width=".7" opacity=".3"/>
+  <line x1="25" y1="0" x2="17" y2="0" stroke="#c8a050" stroke-width=".7" opacity=".3"/>
+  <polygon points="0,-21 -3.5,0 0,-8.5 3.5,0" fill="#d8b860" opacity=".9"/>
+  <polygon points="0,21 -3.5,0 0,8.5 3.5,0" fill="#604020" opacity=".62"/>
+  <polygon points="21,0 0,-3.5 8.5,0 0,3.5" fill="#604020" opacity=".62"/>
+  <polygon points="-21,0 0,-3.5 -8.5,0 0,3.5" fill="#604020" opacity=".62"/>
+  <polygon points="0,-13 -2,0 0,-5.5 2,0" fill="#c8a050" opacity=".42"/>
+  <circle r="2.5" fill="#d8b860" opacity=".9"/>
+  <circle r=".9" fill="#f8e090"/>
+  <text x="0" y="-28" text-anchor="middle" font-family="Cinzel,serif" font-size="7" fill="#d8b860" opacity=".9">N</text>
+  <text x="0" y="33" text-anchor="middle" font-family="Cinzel,serif" font-size="6" fill="#806040" opacity=".6">S</text>
+  <text x="29" y="2" text-anchor="middle" font-family="Cinzel,serif" font-size="6" fill="#806040" opacity=".6">L</text>
+  <text x="-29" y="2" text-anchor="middle" font-family="Cinzel,serif" font-size="6" fill="#806040" opacity=".6">O</text>
+</g>
+
+<!-- Escala -->
+<g transform="translate(28,614)" pointer-events="none" opacity=".38">
+  <line x1="0" y1="0" x2="80" y2="0" stroke="#c8a050" stroke-width=".8"/>
+  <line x1="0" y1="-4" x2="0" y2="4" stroke="#c8a050" stroke-width=".8"/>
+  <line x1="40" y1="-3" x2="40" y2="3" stroke="#c8a050" stroke-width=".8"/>
+  <line x1="80" y1="-4" x2="80" y2="4" stroke="#c8a050" stroke-width=".8"/>
+  <rect x="0" y="-1" width="40" height="2" fill="#c8a050" opacity=".5"/>
+  <text x="0" y="-6" font-family="IM Fell English,serif" font-size="7" fill="#c8a050">0</text>
+  <text x="36" y="-6" font-family="IM Fell English,serif" font-size="7" fill="#c8a050">500</text>
+  <text x="66" y="-6" font-family="IM Fell English,serif" font-size="7" fill="#c8a050">1000 km</text>
+</g>
+</svg>
+</div>
+
+<!-- TELA DE DETALHE FULLSCREEN -->
+<div id="detail">
+  <div id="dt-top">
+    <div class="dt-nav">
+      <div class="dt-crumb"><span id="dt-crumb">MAPA MUNDI</span><span style="opacity:.4">›</span><b id="dt-crumb2">—</b></div>
+      <button id="btn-back" onclick="closeDetail()">← VOLTAR</button>
+    </div>
+    <div class="dt-line"></div>
+    <div class="dt-hero">
+      <div class="dt-ico" id="dt-ico">📍</div>
+      <div class="dt-nb">
+        <div class="dt-type" id="dt-type">—</div>
+        <div class="dt-name" id="dt-name">—</div>
+        <div class="dt-loc"  id="dt-loc">—</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="dt-tabs">
+    <div class="tab active" onclick="showTab(0)">VISÃO GERAL</div>
+    <div class="tab"        onclick="showTab(1)">HISTÓRIA</div>
+    <div class="tab"        onclick="showTab(2)">REGISTROS</div>
+  </div>
+  <div class="tab-bar"></div>
+
+  <div id="dt-body"></div>
+</div>
+
+<!-- LEGENDA -->
+<div id="legpanel">
+  <div class="leg-hdr">
+    <div class="leg-title">Legenda</div>
+    <button class="hbtn" onclick="toggleLeg()">✕</button>
+  </div>
+  <div class="leg-sec">
+    <div class="leg-stit">LOCALIDADES</div>
+    <div class="li"><div class="ld" style="background:#e8c070;box-shadow:0 0 8px #c8a05080"></div><div><div class="lt">★ Academia Central</div><div class="ls">SEDE DO PROGRAMA ÊXODOS</div></div></div>
+    <div class="li"><div class="ld" style="background:#c8a050"></div><div><div class="lt">Cidade-Fortaleza</div><div class="ls">CENTROS URBANOS SOBREVIVENTES</div></div></div>
+    <div class="li"><div class="ld" style="background:#5aaad8"></div><div><div class="lt">Posto Avançado / Base</div><div class="ls">INSTALAÇÕES TÁTICAS DO PROGRAMA</div></div></div>
+    <div class="li"><div class="lq" style="background:repeating-linear-gradient(45deg,#5a1010,#5a1010 3px,#1a0404 3px,#1a0404 6px)"></div><div><div class="lt" style="color:#c05050">Zona Morta</div><div class="ls">TERRITÓRIO IRRECUPERÁVEL</div></div></div>
+  </div>
+  <div class="leg-sec">
+    <div class="leg-stit">CLASSIFICAÇÃO DE FENDAS</div>
+    <div class="li"><div class="ld" style="background:#cc1844;box-shadow:0 0 10px #cc184480"></div><div><div class="lt" style="color:#ff4466">[SS] Fenda-Mãe — Apocalíptico</div><div class="ls">AMEAÇA REGIONAL · SÍMBOLOS DA HUMANIDADE</div></div></div>
+    <div class="li"><div class="ld" style="background:#7828b8;box-shadow:0 0 8px #7828b880"></div><div><div class="lt" style="color:#a050e8">[S] Aberração — Catastrófico</div><div class="ls">LENDAS VIVAS+</div></div></div>
+    <div class="li"><div class="ld" style="background:#b02020"></div><div><div class="lt" style="color:#e04040">[A] Crítica — Extremo</div><div class="ls">DESPERTADOS OBRIGATÓRIO</div></div></div>
+    <div class="li"><div class="ld" style="background:#c86020"></div><div><div class="lt" style="color:#e88040">[B] Grave — Alto Risco</div><div class="ls">EQUIPE DE FRANQUEADORES</div></div></div>
+    <div class="li"><div class="ld" style="background:#b88020"></div><div><div class="lt" style="color:#d8a030">[C] Moderada — Médio Risco</div><div class="ls">FRANQUEADORES</div></div></div>
+    <div class="li"><div class="ld" style="background:#507828"></div><div><div class="lt" style="color:#70a840">[D] Menor — Baixo Risco</div><div class="ls">RASTREADORES</div></div></div>
+    <div class="li"><div class="ld" style="background:#287848"></div><div><div class="lt" style="color:#40b868">[E] Rastejante — Patrulha</div><div class="ls">RECRUTAS SUPERVISIONADOS</div></div></div>
+  </div>
+  <div class="leg-sec">
+    <div class="leg-stit">REGIÕES</div>
+    <div class="li"><div class="lq" style="background:#1e2c1e;border:1px solid #30483a"></div><span class="lt">Valdris — Norte Glaciar</span></div>
+    <div class="li"><div class="lq" style="background:#181828;border:1px solid #22224a"></div><span class="lt">Ossara — Penhascos do Oeste</span></div>
+    <div class="li"><div class="lq" style="background:#221e12;border:1px solid #363018"></div><span class="lt">Mirova — Planícies Centrais</span></div>
+    <div class="li"><div class="lq" style="background:#261818;border:1px solid #4a2020"></div><span class="lt">Seiryn — Arquipélago do Leste</span></div>
+    <div class="li"><div class="lq" style="background:#2c2010;border:1px solid #3e2c10"></div><span class="lt">Kethara — Deserto do Sul</span></div>
+    <div class="li"><div class="lq" style="background:#182016;border:1px solid #1e3018;opacity:.7"></div><span class="lt">Vorrath — Selva Sul-Leste</span></div>
+  </div>
+  <div class="scroll-box" style="margin-top:8px">
+    "As fendas não são portais. São feridas abertas na realidade. E feridas não cicatrizam sozinhas enquanto o ferimento continua aberto."<br><br>— Pesquisadora Lyra Voss, Academia Central
+  </div>
+</div>
+
+<div id="hint">Toque em qualquer local para explorar</div>
+
+<div id="zc">
+  <button class="zb" onclick="dz(1.2)">+</button>
+  <button class="zb" onclick="dz(.85)">−</button>
+  <button class="zb" onclick="rv()" style="font-size:10px">↺</button>
+</div>
+
+<script>
+// ═══════════════════════════════════════════
+// DADOS — três camadas por local
+// ═══════════════════════════════════════════
+const DATA = {
+
+// ───────── CIDADES ─────────
+
+academia:{
+  ico:"★", type:"ACADEMIA · PROGRAMA ÊXODOS", tc:"#c8a050",
+  name:"Academia Central", loc:"Planícies de Mirova · 48°N, 52°L",
+  tabs:[
+    // TAB 0 — Visão Geral
+    {
+      status:{txt:"OPERACIONAL", c:"#40a860", bg:"rgba(40,120,60,.14)"},
+      stats:[
+        {l:"Status",v:"Operacional",c:"#40a860"},
+        {l:"Alunos Ativos",v:"~1.400",c:"#c8a050"},
+        {l:"Despertados",v:"38 confirmados",c:"#5aaad8"},
+        {l:"Ameaça Local",v:"Moderada — Rank B",c:"#d8a030"},
+      ],
+      desc:`A maior instalação de treinamento de Despertados do mundo. Suas muralhas de concreto reforçado com quitina de Colosso sustentaram oito ataques diretos de fendas Rank B desde sua fundação. Dentro dessas paredes, jovens de todo o mundo pós-Queda chegam sem poder e partem com algo que a humanidade ainda não soube nomear completamente.`,
+      seals:[
+        {l:"Fortaleza Classe I",c:"#c8a050",b:"#5a4020"},
+        {l:"Trilha Adrenalina",c:"#c86020",b:"#603010"},
+        {l:"Trilha Pesquisadores",c:"#9060c8",b:"#402060"},
+        {l:"Trilha Suporte",c:"#40a860",b:"#204030"},
+        {l:"Hospital de Campanha",c:"#40a860",b:"#204030"},
+        {l:"Centro de Pesquisa",c:"#9060c8",b:"#402060"},
+      ],
+      threats:[
+        {r:"B",l:"Fendas do perímetro sul",c:"#c86020",f:65},
+        {r:"C",l:"Atividade nos campos externos",c:"#b88020",f:45},
+      ],
+    },
+    // TAB 1 — História
+    {
+      persons:[
+        {ico:"⚔",name:"Diretor-Geral Vastor Rime",role:"COMANDO SUPREMO DA ACADEMIA",
+          desc:"Um dos primeiros Despertados da segunda geração. Perdeu o uso da mão esquerda em campo mas jamais deixou o Programa. Governa a Academia com uma filosofia simples: 'Nenhum êxodo morre sozinho se eu puder evitar.'"},
+        {ico:"🔬",name:"Pesquisadora Lyra Voss",role:"CHEFE DE PESQUISA DE FENDAS",
+          desc:"Autora da teoria sobre a consciência das fendas. Seu artigo classificado circula entre Despertados de Rank B+. Acredita que as fendas não são portais — são organismos."},
+        {ico:"📚",name:"Instrutor-Chefe Daran Fell",role:"COORDENADOR DAS TRILHAS",
+          desc:"Responsável por decidir qual trilha cada recruta segue. Ex-Suporte que desenvolveu a metodologia de avaliação atual. Dizem que ele sabe a trilha de alguém antes que esse alguém entre pela porta."},
+      ],
+      hist:`A Academia Central foi construída sobre as ruínas de uma universidade federal destruída no quinto ano após a Queda. A escolha do local não foi acidental — ficava a apenas 12 quilômetros do que viria a ser a Cratera de Oshen. A frase gravada na pedra da entrada resume a filosofia: <em>Coloque os guerreiros onde a batalha será.</em>
+
+Nos primeiros três anos, a Academia funcionou em tendas. Foram necessárias quatro fendas Rank C e dois ataques de Rastejantes Blindados para que o Conselho aprovasse a construção das muralhas permanentes. Hoje, aquela primeira tenda — rasgada e manchada de sangue — está exposta no corredor principal. Nenhum recruta passa por ela sem perceber o que significa estar de pé.`,
+    },
+    // TAB 2 — Registros
+    {
+      warn:null,
+      mystery:`As fogueiras mensais no pátio central são registradas desde o primeiro ano. Mas há um detalhe que os instrutores jamais comentam oficialmente: em toda fogueira, sem exceção, a chama cessa exatamente à meia-noite — mesmo sem vento, mesmo com lenha nova. Ninguém investigou. Talvez por respeito. Talvez por medo do que encontrariam.`,
+      archive:`ARQUIVO 7-C · RESTRITO AO POSTO DE FRANQUEADOR OU SUPERIOR\n\nNos últimos seis meses, cinco recrutas que completaram a Tribulação relataram o mesmo sonho na noite seguinte: uma sala sem paredes, um homem com a metade do rosto coberta por sombra, e uma pergunta que nenhum deles soube repetir ao acordar. O Departamento de Saúde Mental classificou como stress pós-Evolução. O Departamento de Pesquisa de Fendas abriu um dossiê paralelo. Os dois departamentos não se comunicam.`,
+    }
+  ]
+},
+
+kaedryn:{
+  ico:"🏰", type:"FORTALEZA · CLASSE II", tc:"#c8a050",
+  name:"Fortaleza Kaedryn", loc:"Região de Valdris · Norte Glaciar",
+  tabs:[
+    {
+      status:{txt:"SITIADA — REFORÇO SOLICITADO", c:"#cc2828", bg:"rgba(160,30,30,.15)"},
+      stats:[
+        {l:"Status",v:"Sitiada",c:"#cc2828"},
+        {l:"Pop. Estimada",v:"~22.000 habitantes",c:"#c8b898"},
+        {l:"Despertados",v:"7 ativos",c:"#5aaad8"},
+        {l:"Rank Máximo",v:"[A] — Crescendo",c:"#cc2828"},
+      ],
+      desc:`Kaedryn foi a primeira fortaleza projetada especificamente para o frio extremo — muralhas com cavidades de ar preenchidas com quitina de Rastejante glacial para isolamento térmico. O frio retarda algumas espécies, mas criou algo pior: variantes de Blindados com quitina parcialmente congelada, cuja RD natural supera a de qualquer equipamento básico disponível na região.`,
+      seals:[
+        {l:"Clima Ártico",c:"#80a0c0",b:"#204060"},
+        {l:"Fenda [A] a 40km",c:"#cc2828",b:"#601414"},
+        {l:"Rota Terrestre Bloqueada",c:"#a83030",b:"#501010"},
+        {l:"Variantes Glaciais",c:"#5aaad8",b:"#204060"},
+        {l:"Pedido de Reforço",c:"#d8a030",b:"#705010"},
+      ],
+      threats:[
+        {r:"A",l:"Cume Sangrento — 40km ao sul",c:"#b02020",f:90},
+        {r:"C",l:"Passagem Fria — monitorada",c:"#b88020",f:50},
+      ],
+    },
+    {
+      persons:[
+        {ico:"🏰",name:"Comandante Sael Brynn",role:"COMANDANTE DE KAEDRYN",
+          desc:"Filha de um dos construtores originais da fortaleza. Nasceu em Kaedryn, cresceu em Kaedryn, e recusou duas transferências para a Academia Central. 'Esta muralha tem o suor da minha família', disse ao Conselho. 'Não vou abandoná-la enquanto houver alguém dentro.'"},
+        {ico:"❄",name:"Rastreadora Ina Doval",role:"ESPECIALISTA EM CAMPO GLACIAL",
+          desc:"A única Despertada de Kaedryn com poder de [Gelo]. Irônico numa região que já mata de frio. Seu poder de congelar o sangue das criaturas é a principal razão pela qual a fortaleza ainda está de pé."},
+      ],
+      hist:`Kaedryn foi fundada no oitavo ano após a Queda por um grupo de sobreviventes do norte que descobriu que o frio extremo funcionava como barreira natural contra as primeiras fendas. Eles construíram primeiro um muro, depois uma cidade.
+
+Durante dezoito anos, Kaedryn não foi atacada uma única vez. Os habitantes chamavam isso de bênção. Os pesquisadores chamavam de acúmulo de pressão. A primeira fenda abriu no décimo nono ano — Rank B, com um Alfa que liderava um enxame de Rastreadores adaptados ao gelo. Kaedryn perdeu quatrocentas pessoas em três dias.
+
+Reconstruiu. Sobreviveu. E aprendeu que o frio não era proteção. Era apenas um intervalo.`,
+    },
+    {
+      warn:{ico:"⚠",txt:"AVISO TÁTICO: Três Colossos foram avistados no Cume Sangrento há 9 dias. Todos virados para o sul. Nenhum se moveu. Comportamento sem precedente catalogado. A Torre Lumen correlacionou a direção do olhar com a localização da Fenda-Mãe de Oshen."},
+      mystery:`Na entrada principal de Kaedryn existe uma pedra negra que não estava no projeto original da fortaleza. Nenhum dos construtores sabe de onde veio. Ela é levemente mais quente que o ambiente ao redor — mesmo no pior inverno. Pesquisadores mediram: 3°C acima da temperatura ambiente, constante, sem fonte identificável. O Comandante Brynn proibiu qualquer tentativa de removê-la.`,
+      archive:`DESPACHO DE CAMPO · DIA 312 DO ANO 23 P.Q.\nAssunto: Comportamento anômalo dos Colossos do Cume Sangrento\n\nOs três Colossos continuam imóveis. Hoje, pela primeira vez, percebi que não estão apenas virados para o sul — estão inclinados levemente para a frente. Como se ouvissem algo. Solicitei urgência na resposta da Torre Lumen. Ninguém respondeu ainda.\n\n— Rastr. Ina Doval`,
+    }
+  ]
+},
+
+ossian:{
+  ico:"⚓", type:"FORTALEZA · CLASSE II", tc:"#c8a050",
+  name:"Fortaleza Ossian", loc:"Penhascos de Ossara · Litoral Oeste",
+  tabs:[
+    {
+      status:{txt:"ESTÁVEL — EXPANSÃO DO PÂNTANO MONITORADA", c:"#d8a030", bg:"rgba(160,120,20,.12)"},
+      stats:[
+        {l:"Status",v:"Estável",c:"#40a860"},
+        {l:"Pop. Estimada",v:"~31.000 habitantes",c:"#c8b898"},
+        {l:"Despertados",v:"14 ativos",c:"#5aaad8"},
+        {l:"Ameaça Local",v:"Alta — Rank B expandindo",c:"#c86020"},
+      ],
+      desc:`Ossian se estende por cinco plataformas naturais esculpidas nos penhascos costeiros. Sua posição elevada — o ponto mais baixo da fortaleza está 40 metros acima do mar — é sua maior defesa e seu maior orgulho. Rastejantes comuns têm dificuldade para escalar o calcário. Os adaptados à umidade, vindos do Pântano Cinza, aprenderam a usar as fissuras.`,
+      seals:[
+        {l:"Posição Elevada — 40m+",c:"#8888c0",b:"#202060"},
+        {l:"Porto Funcional",c:"#5aaad8",b:"#204060"},
+        {l:"Fenda [B] 30km",c:"#c86020",b:"#603010"},
+        {l:"Maior Exportador Drops C",c:"#40a860",b:"#204030"},
+        {l:"Rota Marítima Seiryn",c:"#5aaad8",b:"#204060"},
+      ],
+      threats:[
+        {r:"B",l:"Pântano Cinza — expansão ativa",c:"#c86020",f:70},
+        {r:"D",l:"Fendas costeiras menores",c:"#507828",f:30},
+      ],
+    },
+    {
+      persons:[
+        {ico:"⚓",name:"Prefeito Ardan Coss",role:"ADMINISTRADOR CIVIL DE OSSIAN",
+          desc:"Comerciante antes da Queda, administrador por necessidade depois. Ossian prosperou sob sua liderança não por talento militar — ele não tem nenhum — mas por sua capacidade de negociar suprimentos em qualquer condição. 'A cidade sobrevive porque come', diz ele. 'O resto é detalhe.'"},
+        {ico:"🌊",name:"Cap. Mira Selt",role:"COMANDANTE DAS FORÇAS DE CAMPO",
+          desc:"Uma Despertada com poder de [Água] que aprendeu a usar o oceano como extensão do campo de batalha. Foi a primeira a descobrir que criaturas de Ácido têm sua glândula neutralizada por imersão em água salgada. Esse conhecimento salvou Ossian pelo menos três vezes."},
+      ],
+      hist:`Ossian foi fundada por navegadores que perceberam que o mar não havia mudado depois da Queda — ainda obedecia às mesmas leis, ainda oferecia peixe, ainda separava terras. Durante anos, Ossian foi o único centro de distribuição marítima do mundo pós-Queda.
+
+O Pântano Cinza mudou isso. Quando a fenda abriu no interior e começou a expandir, a rota terrestre entre Ossian e o resto de Mirova ficou comprometida. A fortaleza adaptou: tornou-se ainda mais marítima. Hoje, Ossian exporta 60% dos drops Rank C que chegam à Academia Central, todos via mar.
+
+O mercado negro nas docas inferiores é um segredo de polichinelo. A Academia faz vista grossa. O fluxo importa mais que a legalidade.`,
+    },
+    {
+      warn:null,
+      mystery:`Fishermen da doca inferior relatam que, nas noites de lua nova, o mar ao redor dos penhascos fica quieto demais. Nenhuma onda, nenhum vento. Como se algo embaixo d'água estivesse prestando atenção. Nenhuma fenda subaquática foi detectada nessa área. Ainda.`,
+      archive:`NOTA INTERNA · CAP. MIRA SELT\n\nAs criaturas que emergem do Pântano Cinza nas últimas semanas são diferentes das que combatíamos antes. Mais lentas, mas os Venenosos estão com um novo estágio de paralisia que não constava no manual — paralisia ocular além da motora. Um recruta ficou cego por 4 horas. A cura foi espontânea. Mas e se não for na próxima vez? Solicitei atualização urgente do bestiário para essa variante. Resposta pendente.`,
+    }
+  ]
+},
+
+seirynalta:{
+  ico:"👑", type:"CIDADE-FORTALEZA · CLASSE I", tc:"#c8a050",
+  name:"Seiryn-Alta", loc:"Arquipélago de Seiryn · Ilha Principal",
+  tabs:[
+    {
+      status:{txt:"OPERACIONAL — MAIOR POPULAÇÃO VIVA", c:"#40a860", bg:"rgba(40,120,60,.12)"},
+      stats:[
+        {l:"Status",v:"Operacional",c:"#40a860"},
+        {l:"Pop. Estimada",v:"~45.000 habitantes",c:"#c8b898"},
+        {l:"Despertados",v:"21 ativos",c:"#5aaad8"},
+        {l:"Influência Política",v:"Dominante",c:"#9060c8"},
+      ],
+      desc:`A maior cidade sobrevivente do mundo. O mar que a envolve é sua muralha mais antiga e mais eficiente — a maioria das criaturas não atravessa grandes massas de água. Isso deu a Seiryn-Alta algo que nenhuma outra fortaleza tem: tempo. Tempo para reconstruir, para organizar, para acumular população e poder político.`,
+      seals:[
+        {l:"Maior Cidade Viva",c:"#c8a050",b:"#5a4020"},
+        {l:"Ilha Defensável",c:"#40a860",b:"#204030"},
+        {l:"Centro Político",c:"#9060c8",b:"#402060"},
+        {l:"Financia 40% da Academia",c:"#c8a050",b:"#5a4020"},
+        {l:"Fenda [B] — Ilha Sul",c:"#c86020",b:"#603010"},
+      ],
+      threats:[
+        {r:"B",l:"Ravina das Lâminas — ilha sul",c:"#c86020",f:60},
+        {r:"D",l:"Costa Velada — patrulha marítima",c:"#507828",f:25},
+      ],
+    },
+    {
+      persons:[
+        {ico:"👑",name:"Conselheira Elara Vane",role:"REPRESENTANTE DO CONSELHO DE SEIRYN",
+          desc:"A mulher mais poderosa do mundo pós-Queda — e ela sabe disso. Governa através de consensos que ela mesma constrói. Financia a Academia sem pestanejar, mas exige algo em troca: prioridade no envio de Despertados para proteger Seiryn. O Programa aceita. Por enquanto."},
+        {ico:"⚔",name:"Capitão-Geral Daren Osk",role:"COMANDANTE MILITAR DE SEIRYN",
+          desc:"Vinte e um Despertados sob seu comando — o maior contingente concentrado fora da Academia. Osk acredita que Seiryn deveria criar sua própria Academia. A Conselheira Vane ainda não decidiu se concorda."},
+      ],
+      hist:`Seiryn-Alta foi construída no topo de uma ilha montanhosa que, antes da Queda, era conhecida principalmente por vinhedos e turismo. A primeira onda de refugiados chegou a nado. A segunda, em barcos. A terceira, já havia muralhas esperando.
+
+A proteção natural do mar transformou Seiryn no centro político do mundo pós-Queda por um motivo simples: era o único lugar onde reuniões podiam acontecer sem que uma fenda abrisse no meio. Quando os representantes das fortalezas se encontraram pela primeira vez para criar o Programa Êxodos, foi aqui. Isso nunca foi esquecido — nem por Seiryn, nem por mais ninguém.`,
+    },
+    {
+      warn:{ico:"⚠",txt:"SITUAÇÃO POLÍTICA SENSÍVEL: O Conselho de Seiryn votará em breve sobre a criação de uma Academia independente. O Programa Êxodos classificou a proposta como 'fragmentação suicida em tempo de crise'. A votação foi adiada seis vezes. Na sétima, alguém vai forçar uma decisão."},
+      mystery:`Nos subterrâneos de Seiryn-Alta, nos antigos adegas dos vinhedos que existiam antes da Queda, há rumores de experimentos com indução forçada de Despertar. Três relatórios de inspeção da Academia foram arquivados sem conclusão. O quarto inspetor enviado nunca voltou para apresentar seu relatório. A versão oficial: realocação voluntária. Ninguém acredita.`,
+      archive:`COMUNICADO INTERNO · CONSELHO DE SEIRYN\nCLASSIFICADO\n\nO Projeto Âncora avança conforme previsto. Os três sujeitos da fase dois demonstraram estabilização parcial. As cicatrizes psíquicas são... aceitáveis. O que o Programa Êxodos chama de 'Tribulação' é simplesmente o método deles de descartar os que não sobrevivem ao processo. Nós temos um método melhor. Mais rápido. Mais controlado.\n\nOs mortos de fase um agradecem por ter sido parte do progresso.`,
+    }
+  ]
+},
+
+duras:{
+  ico:"🗡", type:"FORTALEZA · CLASSE III", tc:"#c8a050",
+  name:"Cidade-Muralha de Duras", loc:"Deserto de Kethara · Cinturão Sul",
+  tabs:[
+    {
+      status:{txt:"SOB PRESSÃO — CERCO TÁTICO ATIVO", c:"#cc2828", bg:"rgba(160,30,30,.15)"},
+      stats:[
+        {l:"Status",v:"Sob Pressão",c:"#d8a030"},
+        {l:"Pop. Estimada",v:"~18.000 habitantes",c:"#c8b898"},
+        {l:"Despertados",v:"5 ativos",c:"#5aaad8"},
+        {l:"Rank Máximo",v:"[A] escalando",c:"#cc2828"},
+      ],
+      desc:`Duras é construída como uma muralha: cidade-corredor de 8km de extensão e apenas 400m de largura, erguida sobre o único desfiladeiro natural que divide o deserto de Kethara. Invasões só podem vir de duas direções — o projeto funciona como armadilha invertida. O problema é que as criaturas do Abismo aprenderam a esperar.`,
+      seals:[
+        {l:"Design Corredor",c:"#c8a868",b:"#6a5020"},
+        {l:"Abismo [A] a 15km",c:"#cc2828",b:"#601414"},
+        {l:"Oásis Subterrâneo Único",c:"#5aaad8",b:"#204060"},
+        {l:"Cerco Tático Detectado",c:"#9060c8",b:"#402060"},
+        {l:"Evacuação em Avaliação",c:"#d8a030",b:"#705010"},
+      ],
+      threats:[
+        {r:"A",l:"Abismo de Kethara — cerco ativo",c:"#b02020",f:85},
+        {r:"C",l:"Patrulhas no deserto",c:"#b88020",f:55},
+      ],
+    },
+    {
+      persons:[
+        {ico:"🗡",name:"Alcaide Torvus Dray",role:"GOVERNADOR DE DURAS",
+          desc:"Um homem que não dorme. Literalmente — seu poder de Desperto envolve uma forma de vigília aumentada que eliminou sua necessidade de sono. Governa Duras há onze anos sem tirar férias, sem dormir, sem parar. Dizem que é isso que mantém a cidade viva."},
+        {ico:"🔬",name:"Pesquisadora Nara Kell",role:"ANALISTA DO ABISMO",
+          desc:"A única pessoa no mundo que estudou o comportamento tático das criaturas do Abismo de perto o suficiente para sobreviver. Perdeu dois dedos num ataque de Venenoso. Ganhou em troca a primeira documentação completa de uma onda tática coordenada por criaturas de Rank A."},
+      ],
+      hist:`Duras foi criada não por plano, mas por sobrevivência. Quando o deserto de Kethara tornou a rota norte impraticável, grupos de sobreviventes do sul usaram o desfiladeiro como abrigo natural. Com o tempo, a natureza temporária tornou-se permanente.
+
+O oásis subterrâneo sob Duras foi descoberto no terceiro ano. Isso mudou tudo. De ponto de passagem, Duras tornou-se destino. O único com água no sul.
+
+O Abismo de Kethara abriu doze anos depois, sem aviso. As primeiras ondas foram caóticas. As últimas, metodicamente organizadas. Alguém — ou algo — está aprendendo com cada ataque.`,
+    },
+    {
+      warn:{ico:"⛔",txt:"RISCO EXTREMO: A frequência das ondas táticas do Abismo aumentou 300% no último mês. O Conselho analisa evacuação, mas o oásis subterrâneo é a única fonte de água da região sul. Evacuar Duras pode condenar outras três fortalezas à sede. A decisão está pendente há doze dias."},
+      mystery:`As criaturas do Abismo coletam presas. Isso já é sabido. O que Nara Kell descobriu — e não publicou — é que as criaturas que fazem a coleta nunca são as mesmas. Cada onda usa um tipo diferente de criatura para recolher os paralisados. Como se estivessem testando qual funciona melhor. Como se alguém estivesse avaliando os resultados.`,
+      archive:`RELATÓRIO KELL · DIA 87 DO CERCO\nCLASSIFICADO · NÃO DISTRIBUIR\n\nAs criaturas não catalogadas da última onda me perturbam mais do que qualquer coisa que vi até hoje. Não é a aparência. É o comportamento. Elas não atacam. Apenas observam. Ficam na borda do alcance e registram. Se tivesse que nomear o que vi, usaria uma palavra que nunca usei em um relatório científico: curiosidade.\n\nO bestiário precisa ser atualizado. Urgente.`,
+    }
+  ]
+},
+
+vorrathporto:{
+  ico:"🌿", type:"POSTO AVANÇADO · TIPO B", tc:"#c8a050",
+  name:"Porto Vorrath", loc:"Selva de Vorrath · Costa Sul-Leste",
+  tabs:[
+    {
+      status:{txt:"ISOLADO — SOCORRO SOLICITADO HÁ 47 DIAS", c:"#cc2828", bg:"rgba(120,20,160,.12)"},
+      stats:[
+        {l:"Status",v:"Isolado",c:"#c86020"},
+        {l:"Pop. Estimada",v:"~4.200 habitantes",c:"#c8b898"},
+        {l:"Despertados",v:"3 ativos",c:"#5aaad8"},
+        {l:"Ameaça Local",v:"[S] — Campo Silencioso",c:"#7828b8"},
+      ],
+      desc:`Posto de coleta e pesquisa criado pela Academia há quatro anos. A selva de Vorrath produz drops que não existem em nenhuma outra região — organismos com propriedades que nenhum pesquisador conseguiu catalogar completamente. O Campo Silencioso expandiu e bloqueou todas as rotas terrestres. A única saída segura é pelo mar.`,
+      seals:[
+        {l:"Drops Exclusivos da Selva",c:"#9060c8",b:"#402060"},
+        {l:"Campo Silencioso [S]",c:"#7828b8",b:"#3a1060"},
+        {l:"Único Acesso: Marítimo",c:"#5aaad8",b:"#204060"},
+        {l:"47 DIAS SEM RESPOSTA",c:"#cc2828",b:"#601414"},
+      ],
+      threats:[
+        {r:"S",l:"Campo Silencioso — expansão ativa",c:"#7828b8",f:95},
+        {r:"B",l:"Criaturas da selva profunda",c:"#c86020",f:60},
+      ],
+    },
+    {
+      persons:[
+        {ico:"🔬",name:"Pesquisador Davi Kael",role:"RESPONSÁVEL PELO POSTO",
+          desc:"Responsável pela identificação dos primeiros Nódulos de Consciência catalogados. Está em Vorrath há dois anos. Seus últimos relatórios descrevem algo na selva que não corresponde a nenhum monstro catalogado. O Conselho classificou os relatórios. Kael continua mandando mensagens pelo mar."},
+        {ico:"🌿",name:"Guia Lena Dor",role:"ESPECIALISTA EM FAUNA LOCAL",
+          desc:"A única pessoa em Vorrath que cresceu na selva antes da Queda. Conhece caminhos que não constam em nenhum mapa. É ela quem mantém o porto funcionando — e quem primeiro notou que a selva estava mudando."},
+      ],
+      hist:`Vorrath nunca foi prioridade do Programa Êxodos. A selva era densa, as rotas perigosas, a população espalhada. Mas os drops que emergiam das fendas locais não existiam em nenhum lugar do mundo — e isso era valioso demais para ignorar.
+
+O posto foi criado com promessa de expansão. Dois anos depois, o Campo Silencioso começou a crescer. Em doze meses, as rotas terrestres estavam bloqueadas. Em dezoito, o posto estava isolado. A Academia enviou suprimentos por mar nas primeiras semanas. Depois os envios ficaram mais espaçados. Depois pararam.
+
+Os 4.200 habitantes de Porto Vorrath estão contando.`,
+    },
+    {
+      warn:{ico:"⚠",txt:"COMUNICAÇÃO INTERROMPIDA: Último contato via mar foi há 8 dias. O barco de suprimentos enviado há 12 dias não retornou. Causa desconhecida."},
+      mystery:`O relatório classificado de Davi Kael mencionava 'algo que usa as fendas como ferramenta, não como origem.' Essa frase foi sublinhada três vezes pelo revisor do Conselho antes de ser classificada. Nenhuma resposta foi enviada a Kael. O que ele estava vendo na selva que assustou o Conselho a ponto de silenciá-lo em vez de investigar?`,
+      archive:`ÚLTIMA MENSAGEM RECEBIDA · PESQUISADOR DAVI KAEL\nDIA 44 DO ISOLAMENTO\n\nEla voltou hoje. A criatura que não está no bestiário. Ficou na borda da clareira por quatro horas. Lena diz que ela esteve lá ontem também, e anteontem. Ela não ataca. Ela observa.\n\nHoje ela trouxe algo. Largou na borda da clareira e recuou. Um drop de uma fenda que não existe mais — a fenda fechou na semana passada. Mas o drop estava lá. Fresco.\n\nComo ela fechou a fenda? Como ela tinha o drop de uma fenda fechada?\n\nAlguém precisa vir aqui. Por favor.`,
+    }
+  ]
+},
+
+vigilia:{
+  ico:"⚔", type:"POSTO AVANÇADO · TIPO A", tc:"#5aaad8",
+  name:"Vigília do Fim", loc:"Fronteira Mirova-Ossara · Rio Seck",
+  tabs:[
+    {
+      status:{txt:"ALERTA MÁXIMO — FENDA-MÃE A 12KM", c:"#cc2828", bg:"rgba(160,30,30,.18)"},
+      stats:[
+        {l:"Status",v:"Alerta Máximo",c:"#cc2828"},
+        {l:"Efetivo",v:"280 Êxodos",c:"#c8b898"},
+        {l:"Despertados",v:"12 — incluindo 3 Quebradores",c:"#5aaad8"},
+        {l:"Rotação",v:"Obrigatória a cada 15 dias",c:"#d8a030"},
+      ],
+      desc:`O posto mais próximo da Cratera de Oshen. A Vigília do Fim é menos uma base e mais um símbolo — a linha onde o Programa Êxodos decidiu que o recuo para. Seus três Quebradores de Fendas são os únicos capazes de conter as ondas que emergem da Cratera. Por enquanto.`,
+      seals:[
+        {l:"Linha de Contenção",c:"#cc2828",b:"#601414"},
+        {l:"Fenda-Mãe [SS] a 12km",c:"#ff4466",b:"#601428"},
+        {l:"Rotação 15 dias",c:"#5aaad8",b:"#204060"},
+        {l:"3 Quebradores Presentes",c:"#9060c8",b:"#402060"},
+      ],
+      threats:[
+        {r:"SS",l:"Fenda-Mãe de Oshen — iminente",c:"#cc1844",f:100},
+        {r:"A",l:"Pesadelos da Cratera",c:"#b02020",f:80},
+        {r:"B",l:"Ondas de Rastejantes",c:"#c86020",f:60},
+      ],
+    },
+    {
+      persons:[
+        {ico:"⚔",name:"Quebrador Sion Var",role:"COMANDANTE DA VIGÍLIA",
+          desc:"Um dos três Quebradores de Fendas baseados na Vigília. Ficou além da rotação permitida por escolha própria — seis meses no posto sem sair. Seu poder de [Dimensional] é atualmente a melhor ferramenta de contenção disponível. O que ele perdeu nesse tempo, ninguém pergunta diretamente."},
+        {ico:"🔬",name:"Monitora Asha Renn",role:"ESPECIALISTA EM COMPORTAMENTO DE FENDAS",
+          desc:"A pessoa responsável por registrar os pulsos da Fenda-Mãe de Oshen. Ela foi a primeira a identificar o padrão regular nos pulsos — não caótico, mas rítmico. Como uma respiração. Como uma batida de coração."},
+      ],
+      hist:`A Vigília do Fim foi criada no décimo terceiro ano após a Queda, quando a Cratera de Oshen atingiu status SS e o Conselho percebeu que não havia como fechar a fenda — apenas conter o que saía dela.
+
+Nenhum êxodo faz mais de duas rotações na Vigília. O regulamento diz que isso é para preservar a saúde mental. A Vigília tem um cemitério com 34 nomes. Nenhum morreu por monstros.
+
+A última inscrição no cemitério é de 11 dias atrás. A causa da morte está em branco.`,
+    },
+    {
+      warn:{ico:"⛔",txt:"DADOS RECENTES: Os pulsos de realidade da Fenda-Mãe de Oshen aumentaram em frequência nos últimos 3 meses. O padrão agora é regular — não caótico. Asha Renn usou a palavra 'intencional' em seu último relatório. O Conselho não respondeu."},
+      mystery:`Três Êxodos da última rotação não retornaram. A causa oficial: 'indeterminada.' O que não consta no relatório oficial: os três foram vistos por testemunhas entrando voluntariamente na direção da Cratera às 3h da manhã. Não tentaram escapar. Não foram atacados. Apenas... foram.
+
+Asha Renn registrou que, naquela noite, os pulsos da Fenda-Mãe estavam no padrão mais regular já medido. Como uma chamada.`,
+      archive:`ENTRADA DO DIÁRIO · QUEBRADOR SION VAR\nDIA 183 NA VIGÍLIA\n\nOntem à noite ouvi algo. Não é a primeira vez. É uma frequência muito baixa, abaixo do audível — você sente nos dentes, não nos ouvidos. Tenho certeza de que é a Fenda. E tenho certeza de que é um padrão. Sequências de três, pausa, sequências de sete, pausa longa.\n\nTentei decodificar como código. Tentei como ritmo. Tentei como números.\n\nHoje tentei como nomes.\n\nEncontrei o meu.`,
+    }
+  ]
+},
+
+lumen:{
+  ico:"🔭", type:"POSTO AVANÇADO · TIPO A", tc:"#5aaad8",
+  name:"Torre Lumen", loc:"Planícies de Mirova · Setor Leste",
+  tabs:[
+    {
+      status:{txt:"OPERACIONAL — PADRÃO ANÔMALO DETECTADO", c:"#d8a030", bg:"rgba(160,120,20,.1)"},
+      stats:[
+        {l:"Status",v:"Operacional",c:"#40a860"},
+        {l:"Efetivo",v:"95 Êxodos",c:"#c8b898"},
+        {l:"Despertados",v:"6 ativos",c:"#5aaad8"},
+        {l:"Alcance Analisador",v:"200km · 40min antecedência",c:"#9060c8"},
+      ],
+      desc:`Opera o único Analisador de Fenda de longo alcance funcional do mundo — capaz de detectar aberturas de fenda com até 40 minutos de antecedência em raio de 200km. Todos os alertas do setor central passam por aqui. Isso faz da Torre Lumen não apenas um posto avançado, mas o sistema nervoso da defesa de Mirova.`,
+      seals:[
+        {l:"Analisador Único no Mundo",c:"#9060c8",b:"#402060"},
+        {l:"Hub de Comunicações",c:"#5aaad8",b:"#204060"},
+        {l:"Fenda [B] Adjacente",c:"#c86020",b:"#603010"},
+        {l:"PADRÃO ANÔMALO ATIVO",c:"#d8a030",b:"#705010"},
+      ],
+      threats:[
+        {r:"B",l:"Ravina das Lâminas — sinal recente",c:"#c86020",f:55},
+        {r:"C",l:"Planície do Eco — monitorada",c:"#b88020",f:40},
+      ],
+    },
+    {
+      persons:[
+        {ico:"🔭",name:"Pesquisadora-Chefe Elara Sev",role:"DIRETORA DA TORRE LUMEN",
+          desc:"Criou o sistema de previsão de fenda usado em toda a rede da Academia. Seu maior medo não são os monstros — é um padrão que ela detectou recentemente: múltiplas fendas Rank B no setor central se movendo em direções coordenadas. Como se fossem atraídas para o mesmo ponto. Ela sabe qual ponto."},
+        {ico:"📡",name:"Técnico-Sênior Bram Osel",role:"OPERADOR DO ANALISADOR",
+          desc:"Bram trabalha no analisador há sete anos — mais do que qualquer outro operador. Diz que depois de tanto tempo, começa a sentir as fendas antes que o equipamento avise. Elara Sev não descartou a possibilidade de que isso seja verdade."},
+      ],
+      hist:`A Torre Lumen começou como uma torre de vigia convencional durante os anos de construção das muralhas de Mirova. O Analisador foi instalado no décimo sexto ano após a Queda, quando a Academia percebeu que reagir a fendas não era suficiente — era preciso antecipar.
+
+O desenvolvimento do Analisador custou três anos de pesquisa e sete vidas de pesquisadores que testaram protótipos em campo. Os nomes estão gravados no topo da torre, em letras de ouro que ninguém consegue ler do chão.`,
+    },
+    {
+      warn:null,
+      mystery:`O padrão que Elara Sev detectou envolve fendas Rank B se movendo de forma coordenada em direção à Cratera de Oshen. Não é aleatório. É como se as fendas menores estivessem sendo atraídas para algo — ou por alguém. Ela enviou o relatório ao Conselho há 18 dias. Nenhuma resposta. Nenhuma investigação autorizada.`,
+      archive:`NOTA DE ANÁLISE · ELARA SEV\nCONFIDENCIAL\n\nConfirmei hoje. Não é coincidência, não é distorção do analisador, não é erro de calibração. São seis fendas Rank B no setor, todas se movendo — lentamente, mas inequivocamente — em direção a um ponto central. O ponto central é a Cratera de Oshen.\n\nAs fendas menores estão indo ao encontro da maior.\n\nIsso não deveria ser possível. Fendas não têm volição. Exceto que todos os meus dados dizem que têm.\n\nNão sei o que a Fenda-Mãe está fazendo. Sei que está fazendo algo.`,
+    }
+  ]
+},
+
+// ───────── FENDAS ─────────
+
+fendaoshen:{
+  ico:"💀", type:"FENDA RANK [SS] — FENDA-MÃE", tc:"#ff4466",
+  name:"Fenda-Mãe de Oshen", loc:"Cratera de Oshen · 48°N, 52°L · Mirova Central",
+  tabs:[
+    {
+      status:{txt:"⛔ ACESSO PROIBIDO — RANK MÍNIMO: QUEBRADOR DE FENDAS", c:"#ff4466", bg:"rgba(180,20,60,.18)"},
+      stats:[
+        {l:"Rank",v:"[SS] — Fenda-Mãe",c:"#ff4466"},
+        {l:"Aberta em",v:"Ano 3 pós-Queda",c:"#a03030"},
+        {l:"Diâmetro Visível",v:"~2,8km e crescendo",c:"#cc2828"},
+        {l:"Pulsos Registrados",v:"Padrão regular — intencional?",c:"#7828b8"},
+      ],
+      desc:`A fenda não abriu — ela explodiu. Em 17 minutos, a Cratera de Oshen consumiu três cidades e 380.000 vidas. O que a diferencia de todas as outras fendas do mundo não é o tamanho, mas o comportamento: ela não é estática. Ela pulsa. Ela emite. E, segundo dados recentes da Torre Lumen, ela está <em>atraindo</em> as fendas menores ao seu redor como se fossem satélites em órbita.`,
+      seals:[
+        {l:"Tipo: Fenda-Mãe Dimensional",c:"#ff4466",b:"#601428"},
+        {l:"Geometria: Espiral descendente",c:"#9060c8",b:"#402060"},
+        {l:"Emissão: Pulsos regulares",c:"#7828b8",b:"#3a1060"},
+        {l:"Zona Morta: 40km",c:"#a03030",b:"#401010"},
+        {l:"TEORIA PROIBIDA ATIVA",c:"#ff4466",b:"#601428"},
+      ],
+      threats:[
+        {r:"SS",l:"Abertura dimensional em expansão",c:"#cc1844",f:100},
+        {r:"S",l:"Aberrações no perímetro — catalogação pendente",c:"#7828b8",f:90},
+        {r:"A",l:"Pesadelos — contagem não confirmada",c:"#b02020",f:85},
+      ],
+    },
+    {
+      persons:[
+        {ico:"🔬",name:"Monitora Asha Renn",role:"ESPECIALISTA EM COMPORTAMENTO DA FENDA · VIGÍLIA DO FIM",
+          desc:"Responsável pelo registro sistemático dos pulsos da Fenda-Mãe. Foi ela quem identificou o padrão regular — não caótico, mas rítmico. Usou a palavra 'intencional' no relatório oficial. O Conselho não respondeu."},
+        {ico:"⚔",name:"Quebrador Sion Var",role:"RESPONSÁVEL PELA CONTENÇÃO · VIGÍLIA DO FIM",
+          desc:"O único Despertado que permaneceu além da rotação obrigatória de 15 dias — seis meses no posto por escolha própria. Seu diário pessoal registra ter encontrado o próprio nome no padrão de pulsos da fenda. O diário foi classificado após sua leitura por um oficial de segurança."},
+      ],
+      hist:`A Fenda-Mãe de Oshen não foi aberta — foi detonada. Os registros sísmicos do Ano 3 mostram uma explosão de energia dimensional sem precedente: em segundos, a Cratera de Oshen deixou de ser um sítio arqueológico e passou a ser uma ferida no mundo com 2,8km de diâmetro.
+
+O que diferencia a Fenda-Mãe de todas as outras fendas documentadas não é o tamanho. É a estrutura interna. Pesquisadores que sobreviveram o suficiente para registrar dados descrevem uma geometria espiral descendente, como se a fenda não fosse uma abertura mas uma garganta. Como se o mundo estivesse sendo engolido, lentamente, por algo com paciência infinita.
+
+As criaturas que emergem dela são distintas de todas as outras regiões. Cada onda é diferente da anterior — como se a fenda estivesse experimentando. Testando. Aprendendo com o que não funcionou.`,
+    },
+    {
+      warn:{ico:"⛔",txt:"ACESSO PROIBIDO. Qualquer Êxodos abaixo de Quebrador que se aproxime a menos de 15km da Cratera sem autorização expressa do Conselho será registrado como desaparecido em combate. Isso não é punição. É probabilidade estatística documentada."},
+      mystery:`Os pulsos da Fenda-Mãe são regulares. Sequências de três, pausa, sequências de sete, pausa longa. Rítmico como respiração. Rítmico como linguagem. A Monitora Asha Renn tentou decodificar o padrão como código, como ritmo, como números.
+
+O Quebrador Sion Var tentou decodificar como nomes.
+
+Encontrou o dele.
+
+A teoria proibida, que circula entre Despertados de Rank B+ sem nunca aparecer em documento oficial: a Fenda-Mãe não está crescendo. Está esperando. E ela sabe quem estamos.`,
+      archive:`RELATÓRIO CLASSIFICADO · GRAU MÁXIMO · NÃO DISTRIBUIR\nAutora: Monitora Asha Renn\n\nA Fenda-Mãe apresenta três características que nenhuma teoria existente explica: (1) emissão de energia em padrão regular não-aleatório, (2) movimentação documentada de seis fendas Rank B em direção à Cratera ao longo dos últimos dois meses, (3) três casos documentados de Êxodos que relataram ouvir a fenda chamá-los pelo nome antes de caminhar voluntariamente em sua direção.\n\nOs três foram. Nenhum voltou.\n\nO que está do outro lado parece saber o que é cada um de nós. E está compilando uma lista.`,
+    }
+  ]
+},
+
+fendavelath:{
+  ico:"🌀", type:"FENDA RANK [S] — ABERRAÇÃO", tc:"#a050e8",
+  name:"Coração de Velath", loc:"Interior de Ossara · 38°N, 12°L",
+  tabs:[
+    {
+      status:{txt:"ACESSO IMPOSSÍVEL — FRAGMENTAÇÃO COGNITIVA IMEDIATA", c:"#a050e8", bg:"rgba(100,30,160,.18)"},
+      stats:[
+        {l:"Rank",v:"[S] — Aberração",c:"#a050e8"},
+        {l:"Aberta em",v:"Ano 8 pós-Queda",c:"#9060c8"},
+        {l:"Tipo de Abertura",v:"Silenciosa — sem erupção",c:"#6030a0"},
+        {l:"Efeito Primário",v:"Fragmentação de identidade",c:"#7828b8"},
+      ],
+      desc:`A Fenda de Velath não foi sentida quando abriu. Não houve explosão, não houve tremor, não houve sinal de qualquer tipo. Os primeiros socorristas chegaram para investigar relatos de desaparecimentos. Eles também desapareceram. A fenda não mata — ela apaga. Quem entra na zona começa a esquecer quem é, lentamente, até não querer mais sair.`,
+      seals:[
+        {l:"Tipo: Cognitiva / Dimensional",c:"#a050e8",b:"#401060"},
+        {l:"Abertura: Silenciosa",c:"#6030a0",b:"#301050"},
+        {l:"Efeito: Fragmentação de identidade",c:"#9060c8",b:"#402060"},
+        {l:"Espécies: Catalogação pendente",c:"#7828b8",b:"#3a1060"},
+        {l:"Zona Morta: 22km",c:"#a03030",b:"#401010"},
+      ],
+      threats:[
+        {r:"S",l:"Aberração Telepática — confirmada, não catalogada",c:"#7828b8",f:95},
+        {r:"A",l:"Swarm de consciência distribuída — perímetro",c:"#b02020",f:75},
+      ],
+    },
+    {
+      persons:[
+        {ico:"🌀",name:"Sobrevivente Anônima",role:"ÚNICO RETORNO COERENTE · ANO 23 P.Q.",
+          desc:"A única pessoa extraída da zona de Velath com coerência parcial nos últimos dois anos. Não fala mais. Escreve compulsivamente uma única palavra que nenhum pesquisador conseguiu identificar em nenhum sistema de escrita ou idioma humano. Está sob cuidados do Departamento de Saúde Mental da Academia."},
+      ],
+      hist:`A Fenda de Velath não se parece com nenhuma outra fenda documentada. Não há erupção visível, não há geometria clara, não há borda definida. Ela ocupa o espaço de Velath como névoa ocupa um vale — você percebe que entrou nela quando já está dentro.
+
+O que acontece dentro ainda é parcialmente desconhecido. Os dados disponíveis vêm de relatos fragmentados de sobreviventes com danos cognitivos variados. O quadro que emerge desses relatos é consistente: a fenda não é um portal para outro lugar. É um lugar onde <em>você</em> é o material.
+
+As criaturas que habitam Velath — os Telepáticos, cuja catalogação completa está pendente — não atacam os corpos. Atacam a continuidade da consciência. Cada interação com elas remove um fragmento de quem você é. Quem perde fragmentos suficientes para de tentar se lembrar. E quem para de tentar se lembrar, fica.`,
+    },
+    {
+      warn:null,
+      mystery:`A palavra que a sobrevivente escreve compulsivamente foi submetida a 14 sistemas de análise linguística diferentes. Nenhum encontrou correspondência em nenhuma língua humana conhecida, morta ou viva. O Departamento de Pesquisa de Fendas abre um dossiê. O Departamento de Saúde Mental classifica como manifestação psicótica.
+
+A sobrevivente, quando perguntada sobre a palavra, responde sempre da mesma forma: 'É o nome deles. O único de todos eles. O mesmo.'
+
+Se é o mesmo para todos, significa que as criaturas de Velath — todas elas, a consciência distribuída inteira — compartilham uma única identidade. Uma única coisa que as define. E essa coisa tem nome.`,
+      archive:`TRANSCRIÇÃO DE ENTREVISTA · DIA 12 PÓS-EXTRAÇÃO\nSujeito: Sobrevivente anônima\n\nEntrevistador: O que você viu lá dentro?\nSujeito: Um lugar onde guardam o que somos.\nEntrevistador: Guardam como?\nSujeito: Como livros. Nós temos livros. Eles têm... nós.\nEntrevistador: Quem são 'eles'?\nSujeito: [escreve no papel]\nEntrevistador: O que você escreveu?\nSujeito: O nome deles.\n\n[A palavra escrita não foi transcrita. O revisor do relatório anotou à margem: 'não reproduzir'. Não forneceu justificativa.]`,
+    }
+  ]
+},
+
+fendacume:{
+  ico:"🏔", type:"FENDA RANK [A] — CRÍTICA", tc:"#e04040",
+  name:"Fenda do Cume Sangrento", loc:"Pico Nordeste de Valdris · 2.800m de altitude",
+  tabs:[
+    {
+      status:{txt:"COLOSSOS ESTACIONÁRIOS — COMPORTAMENTO SEM PRECEDENTE", c:"#c86020", bg:"rgba(160,80,20,.14)"},
+      stats:[
+        {l:"Rank",v:"[A] — Crítica, crescendo",c:"#e04040"},
+        {l:"Aberta em",v:"Ano 11 pós-Queda",c:"#b02020"},
+        {l:"Altitude",v:"2.800m — fenda mais alta documentada",c:"#80a0c0"},
+        {l:"Anomalia Atual",v:"3 Colossos estacionários, 9 dias",c:"#c86020"},
+      ],
+      desc:`A fenda mais alta do mundo. Sua posição no pico cria condições que nenhum outro local reproduz: o frio extremo endurece a quitina das criaturas que emergem dela, criando variantes com resistência a dano muito acima do padrão. Os Rastejantes Glaciais desta fenda têm RD natural equivalente à de um Blindado do deserto. Mas o que realmente preocupa os pesquisadores são os Colossos — três deles, que nunca desceram da montanha em nove dias. Apenas observam. Para o sul.`,
+      seals:[
+        {l:"Tipo: Altitude extrema",c:"#80a0c0",b:"#204060"},
+        {l:"Efeito ambiental: Glacialização de quitina",c:"#5aaad8",b:"#204060"},
+        {l:"Anomalia: Colossos estacionários",c:"#c86020",b:"#603010"},
+        {l:"Espécies: Rastejantes — Vol. I disponível",c:"#40a860",b:"#204030"},
+        {l:"Colossos: Catalogação pendente",c:"#cc2828",b:"#601414"},
+      ],
+      threats:[
+        {r:"A",l:"Colossos — 3 unidades, comportamento anômalo",c:"#b02020",f:80},
+        {r:"B",l:"Rastejantes Glaciais — enxame ativo",c:"#c86020",f:65},
+      ],
+    },
+    {
+      persons:[
+        {ico:"❄",name:"Rastreadora Ina Doval",role:"ESPECIALISTA EM CAMPO GLACIAL · KAEDRYN",
+          desc:"A única Despertada de Kaedryn com poder de [Gelo]. Foi a primeira a notar a posição consistente dos Colossos e correlacioná-la com a direção da Cratera de Oshen. Seu relatório foi confirmado pela Torre Lumen. O Conselho ainda não respondeu."},
+      ],
+      hist:`A fenda do Cume Sangrento abriu no décimo primeiro ano após a Queda, durante uma tempestade de neve que impediu qualquer testemunha de chegar ao pico nas primeiras 48 horas. Quando os primeiros Rastreadores subiram, encontraram as marcas de uma abertura dimensional em rocha congelada — e nenhuma criatura visível. A fenda já havia absorvido tudo na área imediata.
+
+Com o tempo, os padrões se estabeleceram: Rastejantes emergem regularmente, com as adaptações ao frio que os tornam tão perigosos. A fenda cresce devagar, mas cresce.
+
+O que mudou há nove dias: os Colossos aparecem no horizonte do cume e não descem. Ficam parados, virados para o sul. Sempre para o sul. Os Rastreadores que subiram para investigar relatam um silêncio incomum — não a ausência de som, mas a sensação de que qualquer som que façam está sendo <em>ouvido</em>.`,
+    },
+    {
+      warn:{ico:"⚠",txt:"ALERTA ATIVO: Comportamento dos Colossos não corresponde a nenhum padrão catalogado. A Rastreadora Ina Doval confirmou correlação entre a direção do olhar e a localização da Fenda-Mãe de Oshen (distância: ~680km). A Torre Lumen verificou independentemente. Hipóteses disponíveis: nenhuma satisfatória."},
+      mystery:`O pesquisador mais recente a subir ao cume para estudar os Colossos voltou com frostbite severo nas duas mãos e repetiu por dois dias: <em>'Eles estão ouvindo.'</em> Quando recuperou a coerência, disse não se lembrar de nada além de um silêncio profundo e três pares de olhos muito grandes virados completamente para longe dele.
+
+Três Colossos. Todos virados para o sul. Para a Fenda-Mãe de Oshen.
+
+Se a Fenda-Mãe está enviando os pulsos que Asha Renn documentou, e se os Colossos estão <em>recebendo</em> esses pulsos — o que isso diz sobre a natureza dos Colossos? Sobre o que eles realmente são?`,
+      archive:`NOTA DE CAMPO · RASTREADORA INA DOVAL\n\nMedi o ângulo de orientação dos três Colossos com o equipamento de triangulação que o Pesquisador Kell nos enviou antes de Vorrath ser isolada. Resultado: 182° sul-sudoeste com desvio de 0,3°.\n\nCalculei a direção para a Cratera de Oshen a partir da nossa posição.\n\nResultado: 182° sul-sudoeste com desvio de 0,3°.\n\nEles não estão olhando para o sul. Estão olhando para ela. Com precisão de instrumento.\n\nComo uma criatura sem olhos sabe onde está a Fenda-Mãe?`,
+    }
+  ]
+},
+
+fendaabismo:{
+  ico:"🕳", type:"FENDA RANK [A] — CRÍTICA", tc:"#e04040",
+  name:"Abismo de Kethara", loc:"Deserto de Kethara Sul · 12°N, 38°L",
+  tabs:[
+    {
+      status:{txt:"ONDAS TÁTICAS +300% — CLASSIFICAÇÃO SS EM ANÁLISE", c:"#cc2828", bg:"rgba(160,30,30,.16)"},
+      stats:[
+        {l:"Rank",v:"[A] → [S] previsto",c:"#e04040"},
+        {l:"Aberta em",v:"Ano 10 pós-Queda — sem aviso",c:"#b02020"},
+        {l:"Tipo",v:"Cratera subterrânea ascendente",c:"#c8a868"},
+        {l:"Comportamento",v:"Ondas táticas coordenadas",c:"#9060c8"},
+      ],
+      desc:`O Abismo de Kethara não abriu na superfície — emergiu dela. Uma cratera que se formou de baixo para cima, sem tremor, sem aviso, no décimo ano após a Queda. O que a distingue de todas as outras fendas ativas: o que sai dela demonstra comportamento tático documentado. Não caça aleatoriamente. Estabelece cerco. Usa espécies diferentes para funções diferentes. E coleta sobreviventes vivos.`,
+      seals:[
+        {l:"Tipo: Subterrânea ascendente",c:"#c8a868",b:"#6a5020"},
+        {l:"Comportamento: Cerco organizado",c:"#9060c8",b:"#402060"},
+        {l:"Função documentada: Coleta de vivos",c:"#cc2828",b:"#601414"},
+        {l:"Espécies: Venenosos — Vol. I disponível",c:"#40a860",b:"#204030"},
+        {l:"Coletoras: Catalogação urgente pendente",c:"#a050e8",b:"#401060"},
+      ],
+      threats:[
+        {r:"A",l:"Ondas táticas — frequência +300% último mês",c:"#b02020",f:85},
+        {r:"B",l:"Patrulhas avançadas do abismo",c:"#c86020",f:70},
+      ],
+    },
+    {
+      persons:[
+        {ico:"🔬",name:"Pesquisadora Nara Kell",role:"ANALISTA DO ABISMO · DURAS",
+          desc:"A única pesquisadora que documentou o comportamento tático das criaturas do Abismo em proximidade suficiente para sobreviver. Perdeu dois dedos num ataque de Venenoso. Em troca produziu a primeira documentação completa de uma onda tática coordenada por criaturas de Rank A. Seus últimos relatórios mencionam criaturas 'curiosas' — que observam o grupo pesquisador sem atacar."},
+      ],
+      hist:`A abertura do Abismo de Kethara foi a primeira fenda que o Programa Êxodos não antecipou de nenhuma forma. Fendas normalmente emitem sinais detectáveis — variações de energia, pequenas instabilidades locais. O Abismo simplesmente apareceu.
+
+Os primeiros ataques foram caóticos, como esperado de uma fenda Rank C. Mas a frequência aumentou, e o padrão mudou. Nas primeiras ondas, as criaturas atacavam indiscriminadamente. Nas ondas seguintes, começaram a paralisar alvos específicos. Nas ondas mais recentes, paralisam, aguardam que outras criaturas removam os paralisados, e recuam.
+
+A fenda não está gerando monstros. Está desenvolvendo procedimentos.
+
+O que está dentro do Abismo que transforma comportamento animal em logística? Essa é a questão central que ninguém consegue responder — porque o que volta de lá para contar é zero.`,
+    },
+    {
+      warn:{ico:"⛔",txt:"RISCO EXTREMO: Frequência +300% no último mês. Nara Kell documentou criaturas que observam o grupo pesquisador por até 40 minutos sem atacar — comportamento de avaliação. O Conselho classificou o relatório. Nenhuma investigação autorizada. A Pesquisadora Kell continua no campo por decisão própria."},
+      mystery:`As vítimas paralisadas pelos Venenosos do Abismo são carregadas para dentro da cratera. Nenhuma voltou. Nenhum corpo foi recuperado. Nenhum Êxodos enviado para investigar retornou.
+
+A Pesquisadora Kell tem uma hipótese que não colocou em nenhum relatório oficial: as criaturas coletoras não levam as vítimas para matar. Levam para usar. O que o Abismo está construindo lá embaixo com pessoas vivas é a única pergunta que Kell não consegue parar de fazer — e que ninguém mais parece querer fazer junto com ela.`,
+      archive:`NOTA DE CAMPO · PESQUISADORA NARA KELL · DIA 91 DO CERCO\n\nVerifiquei os registros de identidade de todas as vítimas coletadas com identificação confirmada. São 14 casos.\n\nTodos os 14 passaram pelo processo de triagem de Partícula Ômega da Academia.\n\nTodos tinham concentrações acima da média.\n\nTodos eram candidatos a Despertar.\n\nO Abismo está coletando futuros Despertados.\n\nNão inclui isso no relatório principal porque precisa verificar mais. Mas também porque quero entender o que significa antes de colocar no papel. Se o Abismo escolhe suas vítimas por potencial de Despertar — quem está escolhendo? E para quê?`,
+    }
+  ]
+},
+
+fendaravina:{
+  ico:"⚡", type:"FENDA RANK [B] — GRAVE", tc:"#e88040",
+  name:"Ravina das Lâminas", loc:"Ilha Sul de Seiryn · Costa Rochosa",
+  tabs:[
+    {
+      status:{txt:"ALFA 2ª GERAÇÃO CONFIRMADO — MISSÃO ABERTA 200 PE", c:"#c86020", bg:"rgba(160,80,20,.13)"},
+      stats:[
+        {l:"Rank",v:"[B] — Alto Risco",c:"#e88040"},
+        {l:"Aberta em",v:"Ano 7 pós-Queda",c:"#b02020"},
+        {l:"Terreno",v:"Ravina costeira — 80m de profundidade",c:"#c8a868"},
+        {l:"Anomalia",v:"Alfa de 2ª geração — Aura 50m",c:"#cc2828"},
+      ],
+      desc:`A fenda da Ravina das Lâminas ocupa uma cratera costeira de 80 metros de profundidade formada na abertura. O terreno trabalha a favor das criaturas: os paredões verticais criam emboscadas naturais que os Alfas desta fenda aprenderam a usar com precisão cirúrgica. Um Alfa de segunda geração foi confirmado — variante mais densa, mais escura, com Aura de Comando que alcança 50 metros. Quatro missões tentadas. Dois grupos não retornaram. Consultar Bestiário Vol. I para dados base de Alfas e Rastreadores.`,
+      seals:[
+        {l:"Terreno: Ravina costeira 80m",c:"#c8a868",b:"#6a5020"},
+        {l:"Alfa 2ª Geração — Aura 50m",c:"#cc2828",b:"#601414"},
+        {l:"Espécies: Rastreadores — Vol. I",c:"#40a860",b:"#204030"},
+        {l:"Alfa 2ª Geração: Catalogação em andamento",c:"#b02020",b:"#501010"},
+        {l:"MISSÃO ABERTA · 200 PE",c:"#c8a050",b:"#5a4020"},
+      ],
+      threats:[
+        {r:"B",l:"Alfa de 2ª geração — aguardando confronto",c:"#c86020",f:75},
+        {r:"C",l:"Rastreadores em formação coordenada",c:"#b88020",f:50},
+      ],
+    },
+    {
+      persons:[],
+      hist:`A fenda da Ravina das Lâminas é uma das mais antigas de Seiryn — aberta no sétimo ano, quando a ilha sul ainda era habitada. A evacuação da ilha sul aconteceu seis meses depois da abertura, quando ficou claro que a fenda não seria fechada com os recursos disponíveis na época.
+
+O Alfa de segunda geração foi documentado pela primeira vez há três meses. O que distingue esta variante da documentação padrão do Bestiário Vol. I: a Aura de Comando expandida de 30m para 50m, coloração de quitina significativamente mais escura sugerindo maior densidade, e — o dado mais perturbador — capacidade de posicionamento antecipado. Nas últimas duas missões, o Alfa já estava em posição antes de o grupo começar a descida.
+
+Ele ouviu o briefing. E se posicionou de acordo.`,
+    },
+    {
+      warn:null,
+      mystery:`A evolução do Alfa desta ravina foi correlacionada pela Torre Lumen com um aumento nos pulsos da Fenda-Mãe de Oshen. A hipótese: a Fenda-Mãe emite algo que acelera a evolução das criaturas em fendas próximas — como fertilizante dimensional.
+
+Se isso for confirmado, todas as fendas no raio de influência da Cratera de Oshen podem estar produzindo variantes mais avançadas do que o bestiário atual documenta. A Ravina das Lâminas é a primeira evidência concreta. Não deve ser a última.`,
+      archive:`RELATÓRIO DE MISSÃO · SEGUNDA TENTATIVA · NÃO PUBLICADO\n\nO Alfa não estava onde os dados indicavam. Estava acima, na parede leste, em posição que exige que ele tenha escalado antes de nós descermos.\n\nEle calculou nossa rota de entrada. Ficou esperando.\n\nRetirei o grupo sem baixas. Mas enquanto subíamos de volta, olhei para trás. Ele estava nos observando do topo da parede.\n\nNão atacou. Apenas observou. Como se estivesse avaliando o que aprendeu.\n\nNão enviamos terceiro grupo até revisarmos completamente o protocolo de entrada. Um Alfa que aprende entre tentativas não é um inimigo tático. É um problema de outra categoria.`,
+    }
+  ]
+},
+
+fendapantano:{
+  ico:"☠", type:"FENDA RANK [B] — GRAVE", tc:"#e88040",
+  name:"Pântano Cinza", loc:"Fronteira Ossara-Mirova · Vale Pantanoso",
+  tabs:[
+    {
+      status:{txt:"EXPANSÃO ATIVA — ROTA SUL DE OSSIAN EM RISCO", c:"#c86020", bg:"rgba(160,80,20,.12)"},
+      stats:[
+        {l:"Rank",v:"[B] — Alto Risco",c:"#e88040"},
+        {l:"Status",v:"Expandindo",c:"#cc2828"},
+        {l:"Espécie Dominante",v:"Venenosos e Ácidos — Vol. I disponível",c:"#40a860"},
+        {l:"Expansão",v:"~3km/mês",c:"#cc2828"},
+      ],
+      desc:`Fenda em vale alagado — condições ideais para variantes de Ácido e Veneno. A lama conduz ácido, resultando em Corrosão acelerada em todo equipamento no pântano. Para informações sobre Venenosos e Ácidos, consultar o Bestiário Vol. I.`,
+      seals:[
+        {l:"Terreno Alagado",c:"#5aaad8",b:"#204060"},
+        {l:"Corrosão Ambiental",c:"#70a840",b:"#285010"},
+        {l:"Expansão Confirmada",c:"#cc2828",b:"#601414"},
+        {l:"Rota Sul de Ossian",c:"#c86020",b:"#603010"},
+      ],
+      threats:[
+        {r:"B",l:"Ácidos — enxame com Alfa",c:"#c86020",f:70},
+        {r:"C",l:"Venenosos — trios de caça",c:"#b88020",f:55},
+      ],
+    },
+    {
+      persons:[],
+      hist:`Os Rastejantes Venenosos e Ácidos do Pântano Cinza estão documentados no Bestiário Vol. I. As variantes aquáticas e as adaptações ao ambiente de pântano são específicas desta fenda e estão em processo de catalogação adicional.
+
+A característica mais perturbadora do Pântano Cinza não é a agressividade das criaturas, mas a expansão constante da fenda. A taxa atual de 3km por mês significa que, em seis meses, a fenda alcançará a rota sul de Ossian. Em um ano, pode alcançar a própria fortaleza.
+
+A proposta de usar [Fogo] em área para secar o pântano foi bloqueada pelo risco de incêndio florestal. Nenhuma alternativa aprovada ainda.`,
+    },
+    {
+      warn:null,
+      mystery:`A Capitã Mira Selt de Ossian enviou um relatório sobre uma nova variante de Venenoso observada no pântano: paralisia ocular além da motora, com recuperação espontânea em casos observados — mas não em todos. A variante não consta no Bestiário Vol. I. O relatório foi enviado à Academia Central. Resposta pendente.`,
+      archive:`NOTA DE CAMPO · CAP. MIRA SELT\n\nMeus combatentes lutam descalços agora. Não por escolha — porque a lama corrosiva do pântano destruía as botas em minutos. Adaptamos o equipamento, adaptamos as táticas, adaptamos tudo.\n\nO que me preocupa: as criaturas também estão adaptando. Os Venenosos aprenderam a visar os tornozelos descobertos. Levou três dias para aprenderem.\n\nNós levamos três semanas para adaptar. Elas levaram três dias.`,
+    }
+  ]
+},
+
+fendaplanicie:{
+  ico:"💥", type:"FENDA RANK [C] — MODERADA", tc:"#d8a030",
+  name:"Planície do Eco", loc:"Planícies de Mirova · Setor Leste-Central",
+  tabs:[
+    {
+      status:{txt:"ESTÁVEL — CAMPO DE TREINAMENTO ATIVO", c:"#40a860", bg:"rgba(40,120,60,.1)"},
+      stats:[
+        {l:"Rank",v:"[C] — Médio Risco",c:"#d8a030"},
+        {l:"Status",v:"Estável",c:"#40a860"},
+        {l:"Espécie Dominante",v:"Explosivos — Bestiário Vol. I",c:"#40a860"},
+        {l:"Missão Recomendada",v:"Franqueador Rank C",c:"#a09080"},
+      ],
+      desc:`Campo de treinamento real da Academia para Franqueadores. Os Rastejantes Explosivos aqui formam padrões previsíveis — e ensinam que previsível não significa seguro. Para informações completas sobre Explosivos, consultar o Bestiário Vol. I.`,
+      seals:[
+        {l:"Campo de Treino Oficial",c:"#40a860",b:"#204030"},
+        {l:"Drops C Abundantes",c:"#9060c8",b:"#402060"},
+        {l:"Explosivos — Vol. I",c:"#40a860",b:"#204030"},
+      ],
+      threats:[
+        {r:"C",l:"Explosivos — padrão de enxame",c:"#b88020",f:45},
+        {r:"D",l:"Rastejantes Comuns",c:"#507828",f:25},
+      ],
+    },
+    {
+      persons:[],
+      hist:`A Planície do Eco é oficialmente descrita como 'fenda controlada de treinamento'. Na prática, isso significa que ela é monitorada constantemente, que as missões são graduadas em dificuldade, e que há equipe de resgate sempre pronta.
+
+Os Explosivos aqui foram os primeiros a ser completamente documentados no Bestiário Vol. I, precisamente porque eram a espécie mais estudada em condições relativamente seguras. O comportamento de detonação em cadeia, a Investida Suicida quando o Alfa dá a ordem — tudo está catalogado.
+
+Ironicamente, foi aqui que os pesquisadores aprenderam mais sobre o Alfa: ele não precisa estar presente para dar ordens. Deixa algo nos Explosivos que se ativa quando as condições certas são atingidas.`,
+    },
+    {
+      warn:null,
+      mystery:`A fenda aqui é considerada 'recurso' além de ameaça — fechá-la impactaria 60% dos drops que chegam à Academia. Isso criou uma situação politicamente delicada: a Academia depende economicamente de uma fenda que não pode fechar.
+
+Alguns instrutores, em conversas informais, chamam isso de 'a armadilha do Eco' — você fica tão acostumado com o perigo que começa a gerir o perigo em vez de eliminá-lo.`,
+      archive:`NOTA DE INSTRUTOR · CAMPOS DE TREINAMENTO\n\nHoje um recruta foi o primeiro do grupo a perceber o padrão de movimento dos Explosivos antes que eu precisasse apontar. Quando perguntei como sabia, ela disse: 'Eles querem que eu veja. Ficam no limite do visível de propósito.'\n\nFiquei quieto. Porque ela pode estar certa.\n\nSe os Explosivos estão aprendendo a manipular o comportamento de observação dos Franqueadores, precisamos repensar tudo que usamos como campo de treinamento.`,
+    }
+  ]
+},
+
+fendapassagem:{
+  ico:"❄", type:"FENDA RANK [C] — MODERADA", tc:"#d8a030",
+  name:"Passagem Fria", loc:"Fronteira Valdris-Mirova · Passo de Montanha",
+  tabs:[
+    {
+      status:{txt:"SAZONAL RANK B NO INVERNO — ÚNICA ROTA", c:"#d8a030", bg:"rgba(160,120,20,.1)"},
+      stats:[
+        {l:"Rank",v:"[C] / [B] no inverno",c:"#d8a030"},
+        {l:"Status",v:"Moderado",c:"#d8a030"},
+        {l:"Espécies",v:"Blindados + Rastreadores — Vol. I",c:"#40a860"},
+        {l:"Importância",v:"Única rota para Kaedryn",c:"#cc2828"},
+      ],
+      desc:`A única passagem terrestre segura entre Valdris e Mirova — e a única rota de suprimentos para Kaedryn. No inverno, os Blindados emergem com quitina reforçada por gelo: RD efetiva +3. Para informações completas sobre Blindados e Rastreadores, consultar o Bestiário Vol. I.`,
+      seals:[
+        {l:"Rota Estratégica Única",c:"#c8a050",b:"#5a4020"},
+        {l:"Rank B no Inverno",c:"#c86020",b:"#603010"},
+        {l:"Blindados Glaciais",c:"#80a0c0",b:"#204060"},
+      ],
+      threats:[
+        {r:"C",l:"Blindados Glaciais — RD+3",c:"#b88020",f:50},
+        {r:"D",l:"Rastreadores na neve",c:"#507828",f:35},
+      ],
+    },
+    {
+      persons:[],
+      hist:`A Passagem Fria foi o local da primeira batalha documentada de Luna, a primeira Despertada. Os registros dizem que ela atravessou sozinha no inverno, cercada por Blindados Glaciais. Nenhum arquivo detalha como sobreviveu. Apenas que chegou do outro lado.
+
+Desde então, a Passagem é monitorada como ponto estratégico crítico. Fechar a passagem é fechar Kaedryn — e ninguém tem coragem de propor isso enquanto houver 22.000 pessoas dentro das muralhas da fortaleza.
+
+No inverno, quando os Blindados emergem com quitina de gelo, a dificuldade sobe para Rank B. Missões de inverno exigem Franqueadores com [Fogo] ou equipamento anticorrosão de alta especificação.`,
+    },
+    {
+      warn:null,
+      mystery:`Há algo enterrado no lado norte da Passagem que nenhum mapa oficial registra. Uma construção, talvez — ou uma pedra marcada. Rastreadores que passaram por ali reportaram a mesma sensação: a de que o local foi marcado intencionalmente, e que a marcação era recente. Mais recente que qualquer expedição humana documentada.`,
+      archive:`NOTA DE CAMPO · RASTREADORA KIERA WELD\n\nEncontrei algo hoje que não consigo explicar. Uma pedra no lado norte da Passagem com marcações que parecem raspadas com garras — mas organizadas. Padrão repetido. Não é aleatório.\n\nTirei um esboço. Mostrei ao instrutor ao voltar.\n\nEle ficou pálido e disse que eu não havia visto nada. Depois pegou o esboço e não devolveu.\n\nO que está marcado naquela pedra?`,
+    }
+  ]
+},
+
+fendacolina:{
+  ico:"🌿", type:"FENDA RANK [D] — MENOR", tc:"#70a840",
+  name:"Colina dos Rastros", loc:"Sul de Mirova · Planície Agrícola",
+  tabs:[
+    {
+      status:{txt:"CONTROLADA — CICLO SEMANAL REGULAR", c:"#40a860", bg:"rgba(40,120,60,.1)"},
+      stats:[
+        {l:"Rank",v:"[D] — Baixo Risco",c:"#70a840"},
+        {l:"Status",v:"Controlada",c:"#40a860"},
+        {l:"Ciclo",v:"Semanal — toda segunda-feira",c:"#70a840"},
+        {l:"Missão Recomendada",v:"Rastreador Rank D",c:"#a09080"},
+      ],
+      desc:`Uma das poucas fendas consideradas quase seguras. Emite Rastejantes Comuns em intervalos previsíveis — toda segunda-feira, nas primeiras horas. Consultar Bestiário Vol. I para informações completas sobre Rastejantes Padrão e Filhotes.`,
+      seals:[
+        {l:"Ciclo Previsível",c:"#40a860",b:"#204030"},
+        {l:"Missão Iniciante",c:"#70a840",b:"#285010"},
+        {l:"Drops D Regulares",c:"#9060c8",b:"#402060"},
+      ],
+      threats:[
+        {r:"D",l:"Enxame semanal — previsível",c:"#507828",f:20},
+      ],
+    },
+    {
+      persons:[],
+      hist:`A Colina dos Rastros é o local onde a maioria dos Rastreadores enfrenta sua primeira fenda real. O ciclo semanal previsível a torna ideal para treinamento — a Academia programa missões de campo para segunda-feira de manhã com frequência regular.
+
+Para informações completas sobre os Rastejantes desta fenda, consultar o Bestiário Vol. I. Os Filhotes e os Padrões documentados aqui foram extensamente estudados precisamente por serem acessíveis.
+
+Rastreadores brincam que a Colina tem horário de ônibus.`,
+    },
+    {
+      warn:null,
+      mystery:`Nenhum pesquisador conseguiu explicar a regularidade dos ciclos. A hipótese mais aceita: a fenda respira. O intervalo semanal é sua expiração — um ciclo biológico que sugere que a fenda está viva de uma forma que nenhuma teoria atual consegue explicar completamente.
+
+Se a fenda respira, o que mais ela faz?`,
+      archive:`NOTA DE PESQUISA · DEPT. COMPORTAMENTO DE FENDAS\n\nDia 1: Sete enxames. Segunda-feira, 6h14.\nDia 8: Sete enxames. Segunda-feira, 6h14.\nDia 15: Sete enxames. Segunda-feira, 6h14.\n\nNão há variação. Não há 6h13. Não há 6h15. Não há 8 enxames. Sempre sete, sempre 6h14, sempre segunda.\n\nSe um Rastejante consegue manter um horário com essa precisão, o que diz isso sobre a inteligência que está coordenando?`,
+    }
+  ]
+},
+
+fendacosta:{
+  ico:"🌊", type:"FENDA RANK [D] — MENOR", tc:"#70a840",
+  name:"Costa Velada", loc:"Arquipélago de Seiryn · Costa Leste",
+  tabs:[
+    {
+      status:{txt:"MONITORADA — PATRULHA MARÍTIMA ATIVA", c:"#40a860", bg:"rgba(40,100,140,.1)"},
+      stats:[
+        {l:"Rank",v:"[D] — Baixo Risco",c:"#70a840"},
+        {l:"Status",v:"Monitorada",c:"#40a860"},
+        {l:"Espécie Dominante",v:"Venenosos Aquáticos — catalogação pendente",c:"#d8a030"},
+        {l:"Missão Recomendada",v:"Rastreador Rank D",c:"#a09080"},
+      ],
+      desc:`Fenda subaquática próxima da costa leste de Seiryn. Os Venenosos desenvolveram adaptações aquáticas não previstas no bestiário atual. Para a variante terrestre, consultar Bestiário Vol. I. A variante aquática está em processo de catalogação.`,
+      seals:[
+        {l:"Fenda Subaquática",c:"#5aaad8",b:"#204060"},
+        {l:"Venenosos Aquáticos",c:"#70a840",b:"#285010"},
+        {l:"Variante Não Catalogada",c:"#d8a030",b:"#705010"},
+        {l:"Patrulha Marítima",c:"#5aaad8",b:"#204060"},
+      ],
+      threats:[
+        {r:"D",l:"Venenosos aquáticos — patrulha costeira",c:"#507828",f:25},
+      ],
+    },
+    {
+      persons:[],
+      hist:`O Bestiário Vol. I documenta extensamente os Venenosos terrestres. A variante aquática da Costa Velada é uma descoberta recente — comportamento suficientemente diferente para justificar entrada separada no bestiário, que está em desenvolvimento.
+
+O comportamento mais perturbador: esses Venenosos arrastam presas para a superfície, não para a fenda. Comportamento oposto à espécie terrestre. Oito meses de observação ainda não identificaram o motivo.
+
+O que eles fazem com as presas na superfície? Não atacam. Não paralisam completamente. Apenas... depositam. E vão embora.`,
+    },
+    {
+      warn:null,
+      mystery:`A única coisa que os Venenosos aquáticos da Costa Velada deixam nas presas que levam à superfície é uma marca — um padrão de picadas que, quando fotografado e sobreposto, forma o mesmo símbolo em todos os casos documentados. O mesmo símbolo que aparece na pedra da Passagem Fria que a Rastreadora Kiera Weld fotografou antes de ter o esboço confiscado.
+
+Ninguém ligou os dois ainda. Ou alguém ligou e não quis que os outros soubessem.`,
+      archive:`RELATÓRIO DE PATRULHA · SEIRYN MARÍTIMA\n\nTerceira vez este mês que encontramos alguém na costa com as marcas. Jovem, inconsciente, sem memória das últimas horas. As marcas no corpo formam aquele padrão de novo — já mandei fotos para a Academia três vezes. Terceira vez sem resposta.\n\nOs Venenosos estão marcando pessoas. Não estão matando. Estão marcando.\n\nPara quê?`,
+    }
+  ]
+},
+
+// ───────── REGIÕES ─────────
+
+norte:{
+  ico:"❄", type:"REGIÃO — NORTE GLACIAR", tc:"#80a0c0",
+  name:"Valdris", loc:"Extensão ~340.000km² · Clima Ártico",
+  tabs:[
+    {
+      status:{txt:"AMEAÇA CRESCENTE — KAEDRYN SITIADA", c:"#cc2828", bg:"rgba(160,30,30,.12)"},
+      stats:[
+        {l:"Fortalezas",v:"1 — Kaedryn",c:"#c8a050"},
+        {l:"Fendas Detectadas",v:"4 ativas",c:"#c86020"},
+        {l:"Rank Máximo",v:"[A] em crescimento",c:"#cc2828"},
+        {l:"Pop. Estimada",v:"~22.000 habitantes",c:"#c8b898"},
+      ],
+      desc:`As terras geladas do norte foram as últimas a cair durante a Queda. O frio extremo impediu a proliferação inicial dos monstros. Hoje Valdris é conhecida por variantes de Rastejantes adaptadas ao gelo e pelos três Colossos que vigiam o Cume Sangrento sem descer há dias.`,
+      seals:[
+        {l:"Clima Ártico",c:"#80a0c0",b:"#204060"},
+        {l:"Variantes Glaciais",c:"#5aaad8",b:"#204060"},
+        {l:"Ameaça Crescente",c:"#cc2828",b:"#601414"},
+      ],
+      threats:[
+        {r:"A",l:"Cume Sangrento",c:"#b02020",f:80},
+        {r:"C",l:"Passagem Fria",c:"#b88020",f:45},
+      ],
+    },
+    {
+      persons:[],
+      hist:`Valdris resistiu mais do que qualquer outra região simplesmente porque o frio funcionava como filtro. Criaturas que emergiam das primeiras fendas do norte simplesmente não sobreviviam ao inverno. Com o tempo, isso mudou — as fendas geraram criaturas adaptadas ao frio, e o filtro deixou de funcionar.
+
+A Pesquisadora Lyra Voss é originária de Valdris. Ela acredita que a região foi a primeira a mostrar o que as fendas realmente são: não invasões, mas adaptações. As fendas do norte geraram criaturas do norte. Como se a fenda aprende com o ambiente que habita.
+
+Se isso é verdade, o que a Fenda-Mãe de Oshen está aprendendo com a humanidade?`,
+    },
+    {
+      warn:null,
+      mystery:`O inverno mais recente de Valdris foi o mais quente nos registros — ainda extremo para padrões humanos, mas 4°C acima da média histórica. Pesquisadores ligaram o fato ao aumento de fendas ativas na região. A teoria: as fendas emitem calor como subproduto. Mais fendas, mais calor. Mais calor, menos proteção natural de Valdris.
+
+O filtro de frio que protegeu o norte está desaparecendo. Em dez anos, Valdris pode ter o mesmo nível de ameaça de Mirova.`,
+      archive:`RELATÓRIO CLIMÁTICO · ACADEMIA CENTRAL\nCLASSIFICADO\n\nA correlação entre densidade de fendas e temperatura regional em Valdris atingiu p<0.001 na última análise. Não é coincidência. As fendas estão aquecendo o norte.\n\nO implicação não foi incluída no relatório público por recomendação do Conselho: se as fendas continuarem se multiplicando, Valdris perderá sua vantagem climática em aproximadamente 8-12 anos.\n\nA proteção natural que manteve 22.000 pessoas vivas está com prazo de validade.`,
+    }
+  ]
+},
+
+oeste:{
+  ico:"🌊", type:"REGIÃO — PENHASCOS DO OESTE", tc:"#8888c0",
+  name:"Ossara", loc:"Extensão ~280.000km² · Clima Temperado Costeiro",
+  tabs:[
+    {
+      status:{txt:"ZONA MORTA INTERIOR — FENDA S ATIVA", c:"#a050e8", bg:"rgba(100,30,160,.12)"},
+      stats:[
+        {l:"Fortalezas",v:"1 — Ossian",c:"#c8a050"},
+        {l:"Fendas Detectadas",v:"6 ativas",c:"#c86020"},
+        {l:"Rank Máximo",v:"[S] Coração de Velath",c:"#a050e8"},
+        {l:"Pop. Estimada",v:"~35.000 habitantes",c:"#c8b898"},
+      ],
+      desc:`Os penhascos de Ossara resistiram à Queda melhor que qualquer região continental. As falésias criaram barreiras naturais. Até a Fenda de Velath abrir silenciosamente e transformar o interior em zona morta permanente.`,
+      seals:[
+        {l:"Zona Morta Interior",c:"#a03030",b:"#401010"},
+        {l:"Litoral Controlado",c:"#40a860",b:"#204030"},
+        {l:"Fenda S Ativa",c:"#a050e8",b:"#401060"},
+      ],
+      threats:[
+        {r:"S",l:"Coração de Velath — zona morta",c:"#7828b8",f:90},
+        {r:"B",l:"Pântano Cinza — expansão",c:"#c86020",f:65},
+      ],
+    },
+    {
+      persons:[],
+      hist:`Ossara foi a primeira região a demonstrar que proteção natural não é permanente. Os penhascos, que pareciam intransponíveis para as primeiras criaturas, revelaram-se apenas um obstáculo temporário. As criaturas da Fenda do Pântano aprenderam a usar as fissuras do calcário. As criaturas de Velath nunca precisaram: elas entram pela mente, não pelas paredes.
+
+O interior de Ossara — uma vez a região mais fértil e segura do oeste — é agora uma zona morta. As cidades que ficavam lá ainda estão de pé. Vazias. Com objetos nas mesas, comida nos fogões, vidas abandonadas em meio segundo.
+
+Ninguém voltou para buscar o que deixou para trás.`,
+    },
+    {
+      warn:null,
+      mystery:`A única pessoa que saiu das Cinzas de Velath nos últimos dois anos não fala mais. Ela escreve. Sempre a mesma palavra — que ninguém conseguiu decifrar. Os pesquisadores tentaram todos os sistemas de escrita conhecidos. Nada correspondeu.
+
+O que ela está escrevendo não é uma palavra humana. É alguma coisa que ela trouxe de dentro da zona morta — e que não consegue parar de registrar.`,
+      archive:`NOTA CLÍNICA · DEPARTAMENTO DE SAÚDE MENTAL\n\nA paciente escreve compulsivamente há 47 dias. Tentamos privá-la de papel e caneta por 24 horas como parte de um protocolo de intervenção. Ela usou os próprios dedos na parede.\n\nA palavra é sempre a mesma. Começamos a suspeitar que não é uma palavra — é um nome. O nome de algo que estava dentro da zona de Velath.\n\nE se for um nome, significa que havia algo lá que merecia ter um.`,
+    }
+  ]
+},
+
+central:{
+  ico:"⚔", type:"REGIÃO — PLANÍCIES CENTRAIS", tc:"#b8a878",
+  name:"Mirova", loc:"Extensão ~520.000km² · Clima Temperado",
+  tabs:[
+    {
+      status:{txt:"FENDA-MÃE SS ATIVA — CONCENTRAÇÃO MÁX. DE ÊXODOS", c:"#ff4466", bg:"rgba(180,20,60,.15)"},
+      stats:[
+        {l:"Instalações Êxodos",v:"Academia + 2 bases",c:"#c8a050"},
+        {l:"Fendas Detectadas",v:"9 ativas",c:"#c86020"},
+        {l:"Rank Máximo",v:"[SS] Fenda-Mãe de Oshen",c:"#ff4466"},
+        {l:"Pop. Estimada",v:"~80.000 habitantes",c:"#c8b898"},
+      ],
+      desc:`O coração do mundo pós-Queda. As Planícies de Mirova abrigam a Academia Central e a maior concentração de Despertados. Também abrigam a Fenda-Mãe de Oshen, a maior ameaça já registrada. A ironia não escapa a ninguém que estuda o mapa com atenção.`,
+      seals:[
+        {l:"Academia Central",c:"#c8a050",b:"#5a4020"},
+        {l:"Fenda-Mãe [SS]",c:"#ff4466",b:"#601428"},
+        {l:"Maior Pop. de Êxodos",c:"#5aaad8",b:"#204060"},
+      ],
+      threats:[
+        {r:"SS",l:"Fenda-Mãe de Oshen — centro",c:"#cc1844",f:100},
+        {r:"B",l:"Pântano Cinza — borda leste",c:"#c86020",f:60},
+        {r:"C",l:"Planície do Eco — controlada",c:"#b88020",f:40},
+      ],
+    },
+    {
+      persons:[],
+      hist:`'Coloque os guerreiros onde a batalha será.' Essa frase, gravada na pedra da entrada da Academia, é a única documentação sobre a decisão de construir o Programa a 12km da maior ameaça existente. O fundador não assinou. Ninguém sabe quem disse isso primeiro.
+
+A escolha foi controversa. Continua sendo. Mas os resultados são inegáveis: a concentração de Despertados em Mirova é a única razão pela qual a Fenda-Mãe de Oshen ainda não consumiu a região inteira.
+
+Elara Sev da Torre Lumen detectou algo recente que muda esse cálculo: as fendas menores de Mirova estão se movendo em direção à Cratera. Como se a Fenda-Mãe estivesse chamando.`,
+    },
+    {
+      warn:null,
+      mystery:`Se Elara Sev estiver certa — se as fendas menores estiverem convergindo para a Fenda-Mãe — isso significa que a concentração de Despertados em Mirova pode não ser uma vantagem estratégica. Pode ser exatamente o que a Fenda-Mãe quer: todos os guerreiros no mesmo lugar.
+
+'Coloque os guerreiros onde a batalha será.' E se a batalha for um encontro, não um combate?`,
+      archive:`ANÁLISE ESTRATÉGICA · GRAU MÁXIMO\nNÃO DISTRIBUIR\n\nSe a hipótese de Sev estiver correta, a concentração de forças em Mirova precisa ser reconsiderada com urgência. Temos 38 Despertados na Academia, 12 na Vigília, 6 na Torre Lumen — todos a menos de 50km da Fenda-Mãe.\n\nSe ela está chamando as fendas menores para si, o que acontece quando estiver rodeada?\n\nE se nós somos a resposta ao que ela está esperando?`,
+    }
+  ]
+},
+
+leste:{
+  ico:"🌊", type:"REGIÃO — ARQUIPÉLAGO DO LESTE", tc:"#c08888",
+  name:"Seiryn", loc:"Extensão ~180.000km² · Clima Oceânico",
+  tabs:[
+    {
+      status:{txt:"RELATIVAMENTE SEGURO — MAIOR CONCENTRAÇÃO HUMANA", c:"#40a860", bg:"rgba(40,120,60,.1)"},
+      stats:[
+        {l:"Fortalezas",v:"1 — Seiryn-Alta",c:"#c8a050"},
+        {l:"Fendas Detectadas",v:"3 ativas",c:"#c86020"},
+        {l:"Rank Máximo",v:"[B] Ravina das Lâminas",c:"#c86020"},
+        {l:"Pop. Estimada",v:"~51.000 habitantes",c:"#c8b898"},
+      ],
+      desc:`O arquipélago mais populoso por uma razão: o mar é barreira natural que a maioria das criaturas não atravessa. Abriga a maior cidade sobrevivente. E com isso veio o peso de sustentar politicamente o restante da humanidade.`,
+      seals:[
+        {l:"Maior Cidade",c:"#c8a050",b:"#5a4020"},
+        {l:"Proteção Natural",c:"#40a860",b:"#204030"},
+        {l:"Peso Político",c:"#9060c8",b:"#402060"},
+        {l:"Financia 40% da Academia",c:"#c8a050",b:"#5a4020"},
+      ],
+      threats:[
+        {r:"B",l:"Ravina das Lâminas — ilha sul",c:"#c86020",f:60},
+        {r:"D",l:"Costa Velada — monitorada",c:"#507828",f:20},
+      ],
+    },
+    {
+      persons:[],
+      hist:`A proteção marítima de Seiryn não é absoluta — a Costa Velada prova que fendas podem abrir embaixo d'água. Mas é suficiente para tornar o arquipélago o lugar mais seguro do mundo pós-Queda. Isso criou uma cultura particular: Seiryn sobreviveu sem precisar de Despertados, sem precisar de sacrifícios militares, sem precisar das decisões impossíveis que outras fortalezas enfrentam diariamente.
+
+Isso faz de Seiryn um lugar poderoso. E um lugar que, de certa forma, nunca entendeu completamente o que as outras fortalezas vivem.
+
+O projeto de segunda Academia é sintoma disso: Seiryn quer poder formar seus próprios guerreiros, nos seus próprios termos. O Programa Êxodos chama isso de fragmentação. Seiryn chama de soberania.`,
+    },
+    {
+      warn:null,
+      mystery:`Os experimentos de Despertar forçado que a Academia suspeita estarem acontecendo nos subterrâneos de Seiryn-Alta — se existirem — levantam uma questão: se o processo funcionar, Seiryn terá Despertados independentes do Programa. Sem o juramento, sem a Tribulação, sem os valores que o Programa tenta instalar.
+
+O que um Despertado sem esses valores faz com o poder que recebeu?`,
+      archive:`[Ver entrada de Seiryn-Alta, aba REGISTROS, para documentação sobre o Projeto Âncora.]`,
+    }
+  ]
+},
+
+sul:{
+  ico:"☀", type:"REGIÃO — DESERTO DO SUL", tc:"#c8a868",
+  name:"Kethara", loc:"Extensão ~610.000km² · Clima Árido",
+  tabs:[
+    {
+      status:{txt:"ABISMO ESCALANDO — EVACUAÇÃO EM AVALIAÇÃO", c:"#cc2828", bg:"rgba(160,30,30,.12)"},
+      stats:[
+        {l:"Fortalezas",v:"1 — Duras",c:"#c8a050"},
+        {l:"Fendas Detectadas",v:"7 ativas",c:"#c86020"},
+        {l:"Rank Máximo",v:"[A] escalando",c:"#cc2828"},
+        {l:"Pop. Estimada",v:"~22.000 habitantes",c:"#c8b898"},
+      ],
+      desc:`O deserto de Kethara foi impiedoso antes da Queda. A falta de água impede humanos e muitos tipos de monstros — mas os que sobrevivem ao calor extremo são especialmente resistentes. E o calor parece suprimir a Evolução.`,
+      seals:[
+        {l:"Clima Extremo",c:"#c8a868",b:"#6a5020"},
+        {l:"Oásis Único — Duras",c:"#5aaad8",b:"#204060"},
+        {l:"Cerco Tático [A]",c:"#cc2828",b:"#601414"},
+        {l:"Menor Taxa de Despertados",c:"#d8a030",b:"#705010"},
+      ],
+      threats:[
+        {r:"A",l:"Abismo de Kethara — cerco",c:"#b02020",f:85},
+        {r:"C",l:"Fendas menores no deserto",c:"#b88020",f:40},
+      ],
+    },
+    {
+      persons:[],
+      hist:`Kethara tem a menor taxa de Despertados por habitante do mundo. Pesquisadores investigam se o calor extremo interfere na concentração de Partículas Ômega no sangue — os resultados preliminares sugerem correlação significativa, mas inconclusiva.
+
+Se o calor suprime a Evolução, Kethara está em desvantagem dupla: precisa de Despertados por causa do Abismo, mas não consegue gerar seus próprios. Depende completamente do suprimento da Academia — e a Academia tem prioridades.
+
+O Alcaide Dray de Duras pediu reforços 14 vezes nos últimos dois anos. Recebeu 5 Despertados.`,
+    },
+    {
+      warn:null,
+      mystery:`A pesquisadora Nara Kell tem uma hipótese que ainda não formalizou: o comportamento de coleta do Abismo pode estar relacionado às Partículas Ômega. Se as criaturas estão coletando pessoas, podem estar coletando especificamente pessoas com concentração alta de Partícula Ômega — potenciais Despertados.
+
+Se isso for verdade, o Abismo não está coletando presas. Está coletando recrutas.`,
+      archive:`NOTA KELL · DIA 91 DO CERCO\n\nVerifiquei os registros das vítimas coletadas. Todos os 14 casos com identidade confirmada tinham uma coisa em comum que não está nos relatórios públicos: todos passaram pelo processo de avaliação de Partícula Ômega da Academia.\n\nTodos tinham concentrações acima da média.\n\nTodos eram candidatos a Desperto.\n\nNão incluí isso no relatório principal. Precisava escrever aqui primeiro. Precisava ver se ficava tão assustador no papel quanto estava na minha cabeça.\n\nFicou.`,
+    }
+  ]
+},
+
+vorrath:{
+  ico:"🌴", type:"REGIÃO — SELVA SUL-LESTE", tc:"#90b880",
+  name:"Vorrath", loc:"Extensão ~220.000km² · Clima Tropical Úmido",
+  tabs:[
+    {
+      status:{txt:"CAMPO SILENCIOSO EXPANDINDO — ACESSO BLOQUEADO", c:"#a050e8", bg:"rgba(100,30,160,.12)"},
+      stats:[
+        {l:"Postos Êxodos",v:"1 — Porto Vorrath",c:"#c8a050"},
+        {l:"Fendas Detectadas",v:"5 ativas",c:"#c86020"},
+        {l:"Rank Máximo",v:"[S] Campo Silencioso",c:"#a050e8"},
+        {l:"Pop. Estimada",v:"~4.200 habitantes",c:"#c8b898"},
+      ],
+      desc:`O território menos explorado do mundo pós-Queda. Drops únicos não encontrados em nenhuma outra região. O Campo Silencioso isolou o acesso terrestre. 4.200 pessoas estão contando dias.`,
+      seals:[
+        {l:"Drops Exclusivos",c:"#9060c8",b:"#402060"},
+        {l:"Campo Silencioso [S]",c:"#a050e8",b:"#401060"},
+        {l:"Acesso Marítimo Apenas",c:"#5aaad8",b:"#204060"},
+        {l:"47 DIAS SEM RESPOSTA",c:"#cc2828",b:"#601414"},
+      ],
+      threats:[
+        {r:"S",l:"Campo Silencioso — expansão",c:"#7828b8",f:90},
+        {r:"B",l:"Criaturas da selva profunda",c:"#c86020",f:60},
+      ],
+    },
+    {
+      persons:[],
+      hist:`Vorrath nunca foi prioridade do Programa. A selva era densa, os drops eram valiosos, mas a logística era difícil. Quando o Campo Silencioso começou a expandir, as rotas terrestres foram as primeiras a fechar. A Academia reduziu os envios de suprimentos progressivamente. Hoje, Porto Vorrath está esperando.
+
+O que torna isso urgente além do humanitário: o Pesquisador Davi Kael em Vorrath pode ter descoberto algo que muda a compreensão de como as fendas funcionam. E ele está preso lá dentro, mandando mensagens por mar, sem resposta.`,
+    },
+    {
+      warn:null,
+      mystery:`Kael descreveu uma criatura que usa as fendas como ferramenta. Isso implica em algo de assustador: uma criatura que entende o que são as fendas. Que sabe como abrí-las e fechá-las. Que usa portais dimensionais com propósito.
+
+Se existe uma criatura em Vorrath com esse nível de inteligência e controle, o bestiário atual — mesmo quando completo — pode não ser suficiente. Pode ser necessário repensar não apenas como combatemos, mas o que estamos combatendo.
+
+A pergunta de Kael: a criatura trouxe um drop de uma fenda fechada. Isso significa que ela esteve dentro da fenda. O que existe dentro de uma fenda fechada?`,
+      archive:`[Ver entrada de Porto Vorrath, aba REGISTROS, para a última mensagem de Davi Kael.]`,
+    }
+  ]
+},
+
+}; // fim DATA
+
+// ═══════════════════════════════════════════
+// LÓGICA
+// ═══════════════════════════════════════════
+
+let curData = null, curTab = 0;
+
+function S(id){ open(DATA[id]); }
+
+function open(d){
+  if(!d) return;
+  document.getElementById('hint').classList.add('gone');
+  curData = d; curTab = 0;
+  document.getElementById('dt-ico').textContent = d.ico||'📍';
+  document.getElementById('dt-type').textContent = d.type;
+  document.getElementById('dt-type').style.color = d.tc;
+  document.getElementById('dt-name').textContent = d.name;
+  document.getElementById('dt-loc').textContent  = d.loc;
+  document.getElementById('dt-crumb').textContent = 'MAPA MUNDI';
+  document.getElementById('dt-crumb2').textContent = d.name.toUpperCase();
+  renderTabs(); renderBody();
+  document.getElementById('detail').classList.add('open');
+}
+
+function closeDetail(){
+  document.getElementById('detail').classList.remove('open');
+  setTimeout(()=>{ document.getElementById('dt-body').innerHTML=''; },420);
+}
+
+function renderTabs(){
+  document.querySelectorAll('.tab').forEach((t,i)=>{
+    t.classList.toggle('active', i===curTab);
+  });
+}
+
+function showTab(i){
+  curTab = i; renderTabs(); renderBody();
+  document.getElementById('dt-body').scrollTop = 0;
+}
+
+function renderBody(){
+  if(!curData) return;
+  const td = curData.tabs[curTab];
+  if(!td){ document.getElementById('dt-body').innerHTML=''; return; }
+  let h = '';
+
+  // Tab 0
+  if(curTab===0){
+    if(td.status) h+=`<div class="status-bar" style="background:${td.status.bg};border-color:${td.status.c}44;color:${td.status.c}">
+      <div class="sjewel flk" style="background:${td.status.c}"></div>
+      <span style="font-size:10px;letter-spacing:2px;font-family:'Cinzel',serif">${td.status.txt}</span>
+    </div>`;
+    if(td.stats?.length){
+      h+='<div class="stats-grid">';
+      td.stats.forEach(s=>h+=`<div class="stat-box" style="color:${s.c}">
+        <div class="stat-lbl">${s.l}</div>
+        <div class="stat-val" style="color:${s.c}">${s.v}</div>
+      </div>`);
+      h+='</div>';
+    }
+    if(td.desc) h+=`<div class="sec"><div class="sec-title">Visão Geral</div><div class="body-text">${td.desc}</div></div>`;
+    if(td.seals?.length){
+      h+='<div class="sec"><div class="sec-title">Classificações</div><div class="seals">';
+      td.seals.forEach(s=>h+=`<span class="seal" style="color:${s.c};border-color:${s.b};background:${s.b}22">${s.l}</span>`);
+      h+='</div></div>';
+    }
+    if(td.threats?.length){
+      h+='<div class="sec"><div class="sec-title">Ameaças Registradas</div><div class="threat-list">';
+      td.threats.forEach(t=>h+=`<div class="threat-row" style="background:${t.c}0d;border-left-color:${t.c}55;border-top-color:${t.c}15;border-bottom-color:${t.c}15">
+        <div class="t-rank" style="color:${t.c};text-shadow:0 0 10px ${t.c}80">${t.r}</div>
+        <div class="t-body"><div class="t-label">${t.l}</div>
+          <div class="t-track"><div class="t-fill" style="width:${t.f}%;background:linear-gradient(90deg,${t.c}66,${t.c})"></div></div>
+        </div>
+      </div>`);
+      h+='</div></div>';
+    }
+  }
+
+  // Tab 1
+  if(curTab===1){
+    if(td.persons?.length){
+      h+='<div class="sec"><div class="sec-title">Figuras-Chave</div>';
+      td.persons.forEach(p=>h+=`<div class="person-card">
+        <div class="person-ico">${p.ico}</div>
+        <div class="person-info">
+          <div class="person-name">${p.name}</div>
+          <div class="person-role">${p.role}</div>
+          <div class="person-desc">${p.desc}</div>
+        </div>
+      </div>`);
+      h+='</div>';
+    }
+    if(td.hist) h+=`<div class="sec"><div class="sec-title">História</div><div class="body-text">${td.hist}</div></div>`;
+  }
+
+  // Tab 2
+  if(curTab===2){
+    if(td.warn) h+=`<div class="warn-box"><div class="warn-ico">${td.warn.ico}</div><div>${td.warn.txt}</div></div>`;
+    if(td.mystery) h+=`<div class="sec"><div class="sec-title">O Que Não Consta nos Relatórios</div>
+      <div class="mystery-box">${td.mystery}</div></div>`;
+    if(td.archive) h+=`<div class="sec"><div class="sec-title">Arquivo Confidencial</div>
+      <div class="scroll-box" style="white-space:pre-line;font-size:12.5px">${td.archive}</div></div>`;
+  }
+
+  document.getElementById('dt-body').innerHTML = h;
+}
+
+// Legenda
+let legOpen=false;
+function toggleLeg(){ legOpen=!legOpen; document.getElementById('legpanel').classList.toggle('open',legOpen); }
+
+// Map transform
+const svg=document.getElementById('mapsvg');
+let tx=0,ty=0,sc=1,drag=false,lx=0,ly=0,ld=0,ps=1;
+function applyT(){
+  const w=document.getElementById('mapwrap');
+  const mx=w.clientWidth*(sc-1)/2+180, my=w.clientHeight*(sc-1)/2+180;
+  tx=Math.min(mx,Math.max(-mx,tx)); ty=Math.min(my,Math.max(-my,ty));
+  svg.style.transformOrigin='50% 50%';
+  svg.style.transform=`translate(${tx}px,${ty}px) scale(${sc})`;
+}
+function dz(f){ sc=Math.min(5,Math.max(.75,sc*f)); applyT(); }
+function rv(){ tx=0;ty=0;sc=1;applyT(); }
+
+const mw=document.getElementById('mapwrap');
+mw.addEventListener('touchstart',e=>{
+  if(e.touches.length===1){drag=true;lx=e.touches[0].clientX;ly=e.touches[0].clientY;}
+  else if(e.touches.length===2){drag=false;ld=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);ps=sc;}
+},{passive:true});
+mw.addEventListener('touchmove',e=>{
+  if(e.touches.length===1&&drag){tx+=e.touches[0].clientX-lx;ty+=e.touches[0].clientY-ly;lx=e.touches[0].clientX;ly=e.touches[0].clientY;applyT();}
+  else if(e.touches.length===2){const d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);sc=Math.min(5,Math.max(.75,ps*(d/ld)));applyT();}
+  e.preventDefault();
+},{passive:false});
+mw.addEventListener('touchend',()=>{drag=false;});
+mw.addEventListener('mousedown',e=>{if(e.target.closest('[onclick]'))return;drag=true;lx=e.clientX;ly=e.clientY;});
+window.addEventListener('mousemove',e=>{if(!drag)return;tx+=e.clientX-lx;ty+=e.clientY-ly;lx=e.clientX;ly=e.clientY;applyT();});
+window.addEventListener('mouseup',()=>{drag=false;});
+mw.addEventListener('wheel',e=>{e.preventDefault();dz(e.deltaY<0?1.12:.9);},{passive:false});
+['touchstart','mousedown'].forEach(ev=>mw.addEventListener(ev,()=>document.getElementById('hint').classList.add('gone'),{once:true,passive:true}));
+</script>
+</body>
+</html>
